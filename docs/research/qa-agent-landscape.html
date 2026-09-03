@@ -1,0 +1,505 @@
+<title>Autonomous QA Landscape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#F2F5F4; --surface:#FBFCFC; --surface-2:#E9EEED;
+  --ink:#111918; --ink-2:#3D4A48; --muted:#667472; --rule:#D3DCDA;
+  --accent:#1B5E63; --accent-soft:#DCEAEA;
+  --ok:#2F6B3D; --ok-soft:#DFEBE0;
+  --warn:#8A6516; --warn-soft:#F0E7D2;
+  --bad:#8C2F2F; --bad-soft:#F0DEDE;
+  --shadow:0 1px 2px rgba(17,25,24,.05), 0 8px 24px -16px rgba(17,25,24,.28);
+  --display:"Newsreader",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1413; --surface:#141C1B; --surface-2:#1B2524;
+    --ink:#E4EAE9; --ink-2:#B4C0BE; --muted:#849693; --rule:#2A3635;
+    --accent:#5FB3AC; --accent-soft:#17302F;
+    --ok:#7FBF8C; --ok-soft:#16281A;
+    --warn:#D6AC5C; --warn-soft:#2B2415;
+    --bad:#D98B8B; --bad-soft:#2C1919;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1413; --surface:#141C1B; --surface-2:#1B2524;
+  --ink:#E4EAE9; --ink-2:#B4C0BE; --muted:#849693; --rule:#2A3635;
+  --accent:#5FB3AC; --accent-soft:#17302F;
+  --ok:#7FBF8C; --ok-soft:#16281A;
+  --warn:#D6AC5C; --warn-soft:#2B2415;
+  --bad:#D98B8B; --bad-soft:#2C1919;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent)}
+h1,h2,h3,h4{font-family:var(--display); font-weight:500; text-wrap:balance; margin:0}
+
+.wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--rule); padding:56px 0 0}
+.eyebrow{
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 18px
+}
+.mast h1{font-size:clamp(38px,6.2vw,64px); line-height:1.04; letter-spacing:-.02em; max-width:16ch}
+.thesis{
+  font-family:var(--display); font-size:clamp(18px,2.3vw,23px); line-height:1.48;
+  color:var(--ink-2); max-width:56ch; margin:20px 0 0
+}
+.thesis em{color:var(--ink); font-style:italic}
+.meta{
+  display:flex; flex-wrap:wrap; gap:8px 28px; margin:28px 0 0;
+  font-family:var(--mono); font-size:11.5px; color:var(--muted);
+  letter-spacing:.04em; text-transform:uppercase
+}
+
+.figs{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--rule); margin:40px 0 0; border-top:1px solid var(--rule)}
+.fig{background:var(--paper); padding:22px 20px 26px}
+.fig b{display:block; font-family:var(--mono); font-weight:600; font-size:clamp(23px,3vw,31px); letter-spacing:-.02em; color:var(--accent); font-variant-numeric:tabular-nums}
+.fig span{display:block; margin-top:7px; font-size:13px; line-height:1.42; color:var(--ink-2)}
+.fig i{display:block; margin-top:5px; font-family:var(--mono); font-size:10.5px; font-style:normal; color:var(--muted); letter-spacing:.03em}
+@media(max-width:820px){.figs{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:430px){.figs{grid-template-columns:1fr}}
+
+/* ---------- shell ---------- */
+.shell{display:grid; grid-template-columns:212px minmax(0,1fr); gap:56px; padding:52px 0 96px; align-items:start}
+@media(max-width:980px){.shell{grid-template-columns:1fr; gap:32px}}
+
+nav.toc{position:sticky; top:24px}
+@media(max-width:980px){nav.toc{position:static; border:1px solid var(--rule); border-radius:3px; padding:18px 20px; background:var(--surface)}}
+nav.toc p{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+nav.toc ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; counter-reset:t}
+nav.toc a{
+  display:block; padding:5px 0 5px 26px; position:relative; text-decoration:none;
+  color:var(--ink-2); font-size:13.5px; line-height:1.35; border-radius:2px
+}
+nav.toc li{counter-increment:t}
+nav.toc a::before{
+  content:counter(t,decimal-leading-zero); position:absolute; left:0; top:6px;
+  font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:.02em
+}
+nav.toc a:hover{color:var(--accent)}
+nav.toc a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+main{min-width:0; max-width:74ch}
+section+section{margin-top:64px}
+section>h2{
+  font-size:clamp(25px,3.4vw,33px); letter-spacing:-.015em; line-height:1.18;
+  padding-bottom:14px; border-bottom:2px solid var(--ink); margin-bottom:8px
+}
+.sec-note{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 28px}
+h3{font-size:19.5px; letter-spacing:-.01em; margin:38px 0 10px; line-height:1.3}
+h4{font-family:var(--body); font-size:14px; font-weight:600; letter-spacing:.01em; margin:26px 0 8px}
+p{margin:0 0 15px; max-width:68ch}
+main ul,main ol{margin:0 0 16px; padding-left:20px; max-width:68ch}
+main li{margin-bottom:8px}
+strong{font-weight:600}
+code{font-family:var(--mono); font-size:.87em; background:var(--surface-2); padding:1.5px 5px; border-radius:2px}
+
+/* ---------- evidence chips ---------- */
+.chip{
+  display:inline-flex; align-items:center; gap:5px; vertical-align:middle;
+  font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.09em; text-transform:uppercase;
+  padding:2.5px 7px; border-radius:2px; white-space:nowrap
+}
+.chip::before{content:""; width:5px; height:5px; border-radius:50%; background:currentColor}
+.c-ok{background:var(--ok-soft); color:var(--ok)}
+.c-warn{background:var(--warn-soft); color:var(--warn)}
+.c-bad{background:var(--bad-soft); color:var(--bad)}
+.c-acc{background:var(--accent-soft); color:var(--accent)}
+
+.legend{display:flex; flex-wrap:wrap; gap:10px 18px; padding:16px 18px; background:var(--surface); border:1px solid var(--rule); border-radius:3px; margin:0 0 34px}
+.legend span{font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:8px}
+
+/* ---------- findings ---------- */
+.finds{display:flex; flex-direction:column; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden; margin:0 0 8px}
+.find{background:var(--surface); padding:18px 20px; display:grid; grid-template-columns:26px 1fr; gap:14px}
+.find>b{font-family:var(--mono); font-size:11px; font-weight:600; color:var(--accent); padding-top:4px; letter-spacing:.02em}
+.find h4{margin:0 0 5px; font-size:15px; line-height:1.4}
+.find p{margin:0; font-size:14px; line-height:1.55; color:var(--ink-2)}
+
+/* ---------- the fork: one bold moment ---------- */
+.fork{
+  margin:34px 0; border:1px solid var(--accent); border-radius:3px; overflow:hidden;
+  box-shadow:var(--shadow)
+}
+.fork-head{background:var(--accent); color:var(--paper); padding:16px 22px}
+.fork-head b{font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; opacity:.82; display:block; margin-bottom:5px}
+.fork-head p{margin:0; font-family:var(--display); font-size:19px; line-height:1.35; color:var(--paper); max-width:none}
+.fork-body{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--rule)}
+@media(max-width:620px){.fork-body{grid-template-columns:1fr}}
+.branch{background:var(--surface); padding:20px 22px 22px}
+.branch h4{margin:0 0 4px; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.branch b{display:block; font-family:var(--display); font-size:17px; font-weight:500; margin-bottom:10px; line-height:1.3}
+.branch p{margin:0 0 12px; font-size:13.5px; line-height:1.55; color:var(--ink-2)}
+.branch ul{margin:0; padding-left:17px; font-size:13px; line-height:1.5; color:var(--muted)}
+.branch li{margin-bottom:4px}
+.cost{margin-top:14px; padding-top:12px; border-top:1px solid var(--rule); font-family:var(--mono); font-size:12.5px; font-variant-numeric:tabular-nums}
+.cost b{display:inline; font-family:var(--mono); font-size:12.5px; color:var(--accent); font-weight:600}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto; margin:0 0 20px; border:1px solid var(--rule); border-radius:3px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:13.5px}
+th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.48}
+thead th{
+  font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted); background:var(--surface-2); white-space:nowrap
+}
+tbody tr:last-child td{border-bottom:none}
+td b{font-weight:600}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* ---------- quotes ---------- */
+.quote{border-left:2px solid var(--accent); padding:2px 0 2px 20px; margin:0 0 20px; max-width:68ch}
+.quote p{font-family:var(--display); font-size:17px; line-height:1.5; font-style:italic; color:var(--ink); margin:0 0 7px}
+.quote cite{font-style:normal; font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--muted)}
+
+/* ---------- capability rows ---------- */
+.caps{display:flex; flex-direction:column; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden; margin:0 0 22px}
+.cap{background:var(--surface); padding:17px 20px}
+.cap-top{display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px}
+.cap-top h4{margin:0; font-size:15px}
+.cap p{margin:0; font-size:13.5px; line-height:1.55; color:var(--ink-2)}
+
+/* ---------- implications ---------- */
+.impl{list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.impl li{background:var(--surface); padding:14px 20px; margin:0; font-size:14px; line-height:1.55; color:var(--ink-2)}
+.impl li b{color:var(--ink)}
+
+/* ---------- discarded ---------- */
+.discard{background:var(--bad-soft); border:1px solid var(--bad); border-radius:3px; padding:22px 24px}
+.discard h3{margin:0 0 6px; color:var(--bad); font-size:18px}
+.discard>p{font-size:13.5px; color:var(--ink-2)}
+.discard ul{margin:14px 0 0; padding-left:18px}
+.discard li{font-size:13.5px; line-height:1.55; color:var(--ink-2); margin-bottom:9px}
+.discard li b{color:var(--ink)}
+
+/* ---------- sources ---------- */
+.src{font-family:var(--mono); font-size:12px; line-height:1.6; color:var(--muted); columns:2; column-gap:34px}
+@media(max-width:720px){.src{columns:1}}
+.src p{margin:0 0 9px; break-inside:avoid; max-width:none}
+.src b{color:var(--ink-2); font-weight:500}
+
+footer{border-top:1px solid var(--rule); padding:26px 0 60px; font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--muted); text-transform:uppercase}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <p class="eyebrow">Landscape research · Greenfield</p>
+    <h1>Autonomous QA Landscape</h1>
+    <p class="thesis">Everyone converged on the same architecture: <em>compile the agent run down to a deterministic artifact, and keep the model out of the runtime hot path.</em> The reliability of everything else follows from how much external specification it checks against.</p>
+    <div class="meta">
+      <span>3 September 2026</span>
+      <span>Primary sources · docs, source, arXiv, forums</span>
+      <span>Vendor claims labelled · unverified figures quarantined</span>
+    </div>
+    <div class="figs">
+      <div class="fig"><b>52ms</b><span>Overhead of a cached step versus raw Playwright</span><i>Momentic, vendor-published</i></div>
+      <div class="fig"><b>13.1%</b><span>Zero-shot VLM design critiques judged valid by designers</span><i>UICrit · 5,927 comments</i></div>
+      <div class="fig"><b>85%</b><span>Agreement between an AI triage agent and human engineers</span><i>Elastic · 764 reports</i></div>
+      <div class="fig"><b>57.4%</b><span>Real accessibility defects that are machine-detectable</span><i>Deque · 13,000+ pages</i></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap shell">
+  <nav class="toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#findings">What the evidence says</a></li>
+      <li><a href="#healing">Self-healing patterns</a></li>
+      <li><a href="#fork">The architectural fork</a></li>
+      <li><a href="#bench">Benchmark reality</a></li>
+      <li><a href="#design">Design intelligence</a></li>
+      <li><a href="#reactions">How practitioners react</a></li>
+      <li><a href="#implications">What to build</a></li>
+      <li><a href="#discarded">Discarded claims</a></li>
+      <li><a href="#sources">Sources</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="legend">
+      <span><i class="chip c-ok">Verified</i> traced to a primary source</span>
+      <span><i class="chip c-warn">Vendor claim</i> no independent methodology</span>
+      <span><i class="chip c-acc">Research</i> published, not shipped</span>
+      <span><i class="chip c-bad">Discarded</i> could not be substantiated</span>
+    </div>
+
+    <section id="findings">
+      <h2>What the evidence says</h2>
+      <p class="sec-note">Six findings, ordered by how much they should constrain a design</p>
+      <div class="finds">
+        <div class="find"><b>01</b><div>
+          <h4>Compile the run; keep the model out of the hot path <i class="chip c-ok">Verified</i></h4>
+          <p>Appears independently across commercial products, open-source frameworks and peer-reviewed work. The strongest signal in the entire landscape.</p>
+        </div></div>
+        <div class="find"><b>02</b><div>
+          <h4>Determinism comes from caching, not from better prompting <i class="chip c-warn">Vendor claim</i></h4>
+          <p>Momentic reports cached steps run 52ms slower than raw Playwright and over 99% execute under 500ms. The model becomes a cache-miss exception handler.</p>
+        </div></div>
+        <div class="find"><b>03</b><div>
+          <h4>Heal locator drift — never heal a failing assertion <i class="chip c-ok">Verified</i></h4>
+          <p>The dominant criticism of self-healing is that it masks regressions. This single rule dissolves it: a behavioural change is a candidate bug, not a candidate heal.</p>
+        </div></div>
+        <div class="find"><b>04</b><div>
+          <h4>Design intelligence is reliable in proportion to the spec it checks against <i class="chip c-ok">Verified</i></h4>
+          <p>Anchored to WCAG, design tokens or a Figma file, it is deterministic and trustworthy. Asked to originate an aesthetic judgment, it collapses to 13% validity.</p>
+        </div></div>
+        <div class="find"><b>05</b><div>
+          <h4>The best-evidenced success mode is triage, not execution <i class="chip c-ok">Verified</i></h4>
+          <p>Elastic's triage agent agrees with human engineers 85% of the time and cannot take external action directly. The model narrows the search space; a human decides.</p>
+        </div></div>
+        <div class="find"><b>06</b><div>
+          <h4>The bridge between the two halves is genuinely unbuilt <i class="chip c-ok">Verified</i></h4>
+          <p>Nothing checks a running implementation against its design source as a CI gate. Figma's own AI Design QA agent audits design files, not implementations.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section id="healing">
+      <h2>Self-healing patterns</h2>
+      <p class="sec-note">Seven recurring architectures, from oldest to most consequential</p>
+
+      <h3>Multi-attribute weighted similarity <i class="chip c-ok">Verified</i></h3>
+      <p>The oldest and most widely deployed mechanism, and the only category with a fully public, reproducible algorithm. On locator failure, compare the live DOM against a stored fingerprint — text, position, class, tag, role, structural path — score candidates, take the best above a threshold.</p>
+      <p><b>Healenium</b> uses a modified <b>Longest Common Subsequence</b> with per-attribute weighting plus a heuristic node-distance pass, stores every resolved element's DOM subtree in PostgreSQL, and gates heals behind a configurable <code>score-cap</code> (default 0.5). Applitools, Testim and mabl use the same family commercially.</p>
+
+      <h3>The model as re-ranker, not as the search <i class="chip c-ok">Verified</i></h3>
+      <p>A cheap deterministic heuristic narrows to a handful of candidates; the model only judges among finalists. <b>This beats both pure-heuristic and pure-model in every study that measured it.</b></p>
+      <div class="scroll"><table>
+        <thead><tr><th>Study</th><th>Heuristic alone</th><th>Heuristic + model</th></tr></thead>
+        <tbody>
+          <tr><td>Explanation-consistency repair<br><span class="num">139 broken statements</span></td><td class="num">30.9% <span style="color:var(--muted)">(43/139)</span></td><td class="num"><b>87.8%</b> <span style="color:var(--muted)">(122/139)</span></td></tr>
+          <tr><td>VON Similo LLM<br><span class="num">804 test cases</span></td><td class="num">70 failures</td><td class="num"><b>39 failures</b> <span style="color:var(--muted)">(−44%)</span></td></tr>
+        </tbody>
+      </table></div>
+      <p>Note what the first row shows: the <em>weakest</em> standalone heuristic became the strongest performer once paired with model judgment. Katalon Studio 11 ships exactly this shape — classic fallback chain first, model only if that also fails.</p>
+
+      <h3>Grounding: three families <i class="chip c-ok">Verified</i></h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Family</th><th>Mechanism</th><th>Trade-off</th></tr></thead>
+        <tbody>
+          <tr><td><b>Accessibility tree</b></td><td>The semantic tree screen readers use</td><td>The convergent default — stable across CSS/DOM refactors, fails on components with poor a11y</td></tr>
+          <tr><td><b>Set-of-Marks</b></td><td>Numeric IDs and boxes drawn onto a screenshot</td><td>Bridges pixels to discrete actions; still depends on DOM/AXTree quality</td></tr>
+          <tr><td><b>Pure pixels</b></td><td>Vision model emits coordinates directly</td><td>Works where no object model exists at all; weakest precision</td></tr>
+        </tbody>
+      </table></div>
+      <p>The production answer is <b>accessibility-tree-first with vision fallback</b> — stated explicitly by Momentic, and independently confirmed as the taxonomy in the agent literature.</p>
+
+      <h3>Human approval before a heal becomes permanent <i class="chip c-ok">Verified</i></h3>
+      <p>Katalon requires clicking Approve in Self-Healing Insights. Octomind enforces "zero silent commits" — nothing lands until a human runs <code>octomind pull</code>. QA Wolf routes fixes through review. Autify makes model-version promotion manual <em>specifically</em> so tests behave identically across runs. Presented consistently as the antidote to silent test-intent drift.</p>
+    </section>
+
+    <section id="fork">
+      <h2>The architectural fork</h2>
+      <p class="sec-note">The most consequential decision in the space</p>
+
+      <div class="fork">
+        <div class="fork-head">
+          <b>Pattern 05 · the convergent architecture</b>
+          <p>Run the model once to produce an artifact. Persist it. Replay with zero inference. Re-invoke only as an exception handler.</p>
+        </div>
+        <div class="fork-body">
+          <div class="branch">
+            <h4>Branch A</h4>
+            <b>Compile to a script</b>
+            <p>Known app, want it cheap, fast and stable. The model's product is a deterministic artifact — often a committed test file.</p>
+            <ul>
+              <li><b>Octomind</b> — "AI doesn't belong in test runtime"</li>
+              <li><b>Playwright Agents</b> — Healer patches the checked-in spec</li>
+              <li><b>Momentic V3</b> — cache-and-revalidate loop</li>
+              <li><b>Stagehand</b> — observe once, replay with zero inference</li>
+              <li><b>Meticulous</b> — no model anywhere; recorded session is the artifact</li>
+            </ul>
+            <div class="cost">Compile cost <b>$0.002–$0.092</b></div>
+          </div>
+          <div class="branch">
+            <h4>Branch B</h4>
+            <b>Stay agentic every step</b>
+            <p>Unknown app, want maximum generality. No prior successful run exists to compile from, so state is re-derived every step.</p>
+            <ul>
+              <li><b>Skyvern</b> — set-of-marks vision loop</li>
+              <li><b>Browser Use</b> — DOM-first per-step agent</li>
+              <li><b>Agent-E</b> — hierarchical planner/navigator</li>
+            </ul>
+            <div class="cost">Equivalent workload <b>~$15–150</b></div>
+          </div>
+        </div>
+      </div>
+
+      <p>The cost delta is up to <b>~1500×</b>, formalised in the Agentic Compilation paper as the <em>rerun crisis</em> — O(M×N) scaling for continuous-loop agents — with 80–94% zero-shot blueprint success once compiled. <span class="chip c-acc">Research</span></p>
+      <p><b>Regression testing is squarely Branch A.</b> Branch B is not a worse design; it is the correct design for a different problem. Choosing the wrong branch is the expensive mistake.</p>
+    </section>
+
+    <section id="bench">
+      <h2>Benchmark reality</h2>
+      <p class="sec-note">What agents actually score, and why it overstates them</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Benchmark</th><th>Result</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td><b>WebArena</b><br><span class="num">812 tasks</span></td><td class="num">14.41% → 74.3%</td><td>Original GPT-4 baseline vs. top Feb 2026 leaderboard entry. <b>Human baseline 78.24%</b></td></tr>
+          <tr><td><b>WebVoyager</b><br><span class="num">643 tasks, 15 real sites</span></td><td class="num">59.1% / 73.2% / 89.1%</td><td>Original / Agent-E / Browser Use self-reported on a modified 586-task harness</td></tr>
+          <tr><td><b>Mind2Web</b></td><td class="num">55.1%</td><td>Best cross-task element accuracy; 35.8% cross-website</td></tr>
+          <tr><td><b>RAG-grounded generation</b></td><td class="num">30% → 90%</td><td>Execution success with retrieval grounding vs. without</td></tr>
+        </tbody>
+      </table></div>
+      <p>Benchmarks grade happy paths in frozen environments. The six production failure modes nobody benchmarks: <b>selector drift, screenshot ambiguity, login-state loss, modal interruptions, rate-limit cliffs, and irreversibility.</b> WebArena's shop never ships a new CSS class; Mind2Web never fires a cookie banner mid-flow.</p>
+    </section>
+
+    <section id="design">
+      <h2>Design intelligence</h2>
+      <p class="sec-note">A vague term that decomposes into six capabilities of wildly different reliability</p>
+
+      <div class="caps">
+        <div class="cap">
+          <div class="cap-top"><h4>Accessibility conformance</h4><i class="chip c-ok">Mature · deterministic</i></div>
+          <p>The only place where design correctness is grounded in an actual W3C specification. axe-core fully automates <b>29.5% of WCAG 2.2 criteria</b> — but that covers <b>57.4% of real-world defect volume</b>, because contrast, focus order and parsing account for a disproportionate share of actual bugs. Focus order, focus visible and non-text contrast are ~100% automatable. Link purpose and heading descriptiveness are structurally not.</p>
+        </div>
+        <div class="cap">
+          <div class="cap-top"><h4>Design-token conformance</h4><i class="chip c-ok">Mature · deterministic</i></div>
+          <p>The W3C Design Tokens format reached <b>first stable version in October 2025</b>, backed by Figma, Adobe, Google, Microsoft, Shopify and Salesforce. Stylelint and ESLint rules flag hardcoded values where a token reference belongs. Limit: it is source-level analysis — a component using tokens correctly but composed wrongly at the call site still passes.</p>
+        </div>
+        <div class="cap">
+          <div class="cap-top"><h4>Visual regression</h4><i class="chip c-ok">Mature · noisy</i></div>
+          <p>Pixel diffing in YIQ space with dedicated anti-aliasing detection, or structural segmentation with tunable match levels. <b>The real bottleneck is not diff accuracy — it is approval fatigue.</b> Every tool needs a human to approve intentional changes; high diff volume produces rubber-stamping, and the safety net dies silently. That is why teams switch visual testing off.</p>
+        </div>
+        <div class="cap">
+          <div class="cap-top"><h4>Baseline-free layout heuristics</h4><i class="chip c-acc">Geometry mature · ML research-only</i></div>
+          <p>Bounding-box overlap and truncation detection is deterministic and needs no baseline. The learned line is real but unshipped: <b>OwlEyes</b> reached 85% precision / 84% recall and found 57 unknown Android bugs (26 fixed); <b>Nighthawk</b> reached 0.84 detection but only <b>0.59 localization</b>. Detection is systematically easier than localization, which is easier than explanation — a pattern that recurs across the whole landscape.</p>
+        </div>
+        <div class="cap">
+          <div class="cap-top"><h4>Figma-vs-production conformance</h4><i class="chip c-warn">Emerging · largely absent</i></div>
+          <p>Code Connect maps components; the MCP server feeds design context at generation time; Figma's own AI Design QA agent audits <em>design files against the design library</em>. <b>None of them compare a running implementation to its design.</b> Once anyone edits generated code, drift begins and nothing re-checks it. Continuous visual diffing does not cover this — it diffs code against itself over time, not against the design source.</p>
+        </div>
+        <div class="cap">
+          <div class="cap-top"><h4>Model design critique</h4><i class="chip c-bad">Unreliable as a detector</i></div>
+          <p>The most sobering evidence in the research. Against 3,059 critiques from 7 professional designers, zero-shot vision-model critique produced 5,927 comments of which <b>only 776 — 13.1% — were validated as accurate</b>. Few-shot prompting improved quality 55% relative; human critiques still scored 0.75 against the best model condition's 0.48. Independently corroborated: model judges <em>can rank but cannot score</em>, with uncertainty covering ~40% of the range.</p>
+        </div>
+      </div>
+
+      <div class="scroll"><table>
+        <thead><tr><th>Capability</th><th>Baseline?</th><th>Deterministic?</th><th>Catches what a functional test cannot</th></tr></thead>
+        <tbody>
+          <tr><td>Accessibility</td><td><b>No</b></td><td><b>Yes</b></td><td>Spec-grounded failures that look fine and pass every functional test</td></tr>
+          <tr><td>Token linting</td><td><b>No</b></td><td><b>Yes</b></td><td>Off-system styling that renders correctly but violates the system</td></tr>
+          <tr><td>Layout heuristics</td><td><b>No</b></td><td>Geometry yes</td><td>Layout bugs on a first-ever render, no baseline needed</td></tr>
+          <tr><td>Visual regression</td><td>Yes</td><td>Mostly</td><td>Unintended CSS regressions with no functional signal</td></tr>
+          <tr><td>Figma conformance</td><td>Yes</td><td>No</td><td>Divergence from design intent, not just from a prior build</td></tr>
+          <tr><td>Model critique</td><td>No</td><td><b>No</b></td><td>Aesthetic judgment — currently unreliable</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>Practical rule.</b> Never ask a model to score a UI out of ten. Ask which of two is better, or don't ask.</p>
+    </section>
+
+    <section id="reactions">
+      <h2>How practitioners react</h2>
+      <p class="sec-note">The counterweight to vendor marketing — what teams say after adopting</p>
+
+      <h3>The dominant criticism: healing masks regressions</h3>
+      <p>This is the single most repeated critique across every source type. From Ministry of Testing practitioners:</p>
+      <div class="quote">
+        <p>"If a test is 'healed' how do I know this hasn't changed the intent of my test… if I have to go and check then I might as well have fixed the test myself."</p>
+        <cite>Bill Matthews</cite>
+      </div>
+      <div class="quote">
+        <p>"Snake oil that may result in false positives — but even worse — false negatives without any transparency to see what is truly going on."</p>
+        <cite>Mark Cole</cite>
+      </div>
+      <p>The canonical cautionary tale recurs near-verbatim across independent write-ups: a <em>Pay now</em> button disappears because of a real regression, healing latches onto a visually similar wrong button, the test passes, the bug ships.</p>
+
+      <h3>What the critics accept</h3>
+      <p>The one concretely-praised design in the whole practitioner corpus: <b>heal selector drift, refuse to heal failing assertions.</b> Alongside it — cap heals per run, log every one, and pair healing with content assertions so that a passing test still means the feature works.</p>
+      <p>A vendor in this exact market concedes the point rather than fighting it. Octomind, who sell AI test generation, publicly argue <b>"AI doesn't belong in test runtime"</b> — and candidly state their own team cannot claim these tools boosted productivity by 20% or more. <span class="chip c-warn">Vendor claim</span></p>
+
+      <h3>Where it demonstrably works</h3>
+      <p>Elastic Security Labs' bug-bounty triage agent is the best-quantified success story found: <b>85% agreement</b> with human security engineers across <b>764 known-outcome reports</b>, at <b>$0.50–$4.90 per report</b>, with ~70% rejected during cheap analysis. Critically, the agent <em>cannot take any external action directly</em>. Every genuine success in this research has that shape — the model narrows, a human decides.</p>
+      <p>Also evidenced: test-idea generation when properly steered, and investigating flaky CI as an <em>investigator</em> rather than as the thing deciding pass or fail.</p>
+
+      <h3>The structural critique</h3>
+      <p>Bach and Bolton draw a hard line between <b>checking</b> — mechanical pass/fail a machine can do — and <b>testing</b>, a sapient process of exploration and modelling. On their account "test automation" is a misnomer: what is automated is always checking. Applied to agents: <em>"AI is not testing. AI cannot do professional testing. AI can do exploratory analysis."</em></p>
+      <p>Bach adds an accountability argument that is not a capability claim, and so cannot be answered by better models: <em>"the operator of an AI agent always bears responsibility for the behavior of that agent."</em> This is a minority-but-credentialed position, not industry consensus — a small influential faction argues the category is named wrong; a larger mainstream argues about degree.</p>
+    </section>
+
+    <section id="implications">
+      <h2>What to build</h2>
+      <p class="sec-note">Each item traces to a finding above</p>
+
+      <h4>Architecture</h4>
+      <ol class="impl">
+        <li><b>Compile, don't loop.</b> Plan once, persist a deterministic artifact, replay with zero inference, re-invoke only on cache miss.</li>
+        <li><b>Accessibility-tree first, vision fallback.</b> The convergent answer, not a compromise.</li>
+        <li><b>Use the model as a re-ranker</b> over a heuristic shortlist, never as the primary search.</li>
+        <li><b>Persist heals as reviewable artifacts</b>, ideally committed code with a version history.</li>
+      </ol>
+
+      <h4>Safety — the part that separates a serious system from a demo</h4>
+      <ol class="impl">
+        <li><b>Never heal a failing assertion.</b> Make assertions structurally un-healable; this answers the number-one criticism outright.</li>
+        <li><b>Cap heals per run and log every one</b> with old attempt, new selector, confidence and reasoning.</li>
+        <li><b>Require a healed selector to match on stable semantic attributes</b> — role, test-id, accessible name — not visual similarity alone. This is precisely the <em>Pay now</em> failure mode.</li>
+        <li><b>Distinguish "the app broke" from "I broke."</b> Treat agent-layer instability as a separately-reported failure category.</li>
+        <li><b>Build a human-accountability seam</b>, not just a dashboard someone could look at.</li>
+        <li><b>Report cost per run</b> transparently.</li>
+      </ol>
+
+      <h4>Design intelligence — sequence by reliability, not by impressiveness</h4>
+      <ol class="impl">
+        <li><b>Start with the spec-anchored layers:</b> accessibility, token conformance, geometric layout heuristics. No baseline, deterministic, and they catch real bugs that pass every functional test.</li>
+        <li><b>Add visual regression second</b>, and spend disproportionate effort on noise suppression. Approval fatigue kills adoption, not diff accuracy.</li>
+        <li><b>Use vision models to rank and to explain a diff something else already flagged</b> — never as the detector, never for absolute scores.</li>
+        <li><b>Don't let the system grade its own generated tests.</b></li>
+      </ol>
+
+      <h4>The open opportunity</h4>
+      <p>Two gaps are genuinely unfilled: <b>implementation-versus-design conformance as a CI gate</b>, and <b>off-catalog component detection in a rendered page</b>. Both are spec-anchored — exactly where the evidence says automation is reliable — and neither exists as a mature product.</p>
+    </section>
+
+    <section id="discarded">
+      <h2>Discarded claims</h2>
+      <p class="sec-note">Widely circulated, could not be substantiated — listed so they don't get re-imported later</p>
+      <div class="discard">
+        <h3>Do not cite these as fact</h3>
+        <p>Each was encountered repeatedly during research and traced back to nothing.</p>
+        <ul>
+          <li><b>"78% on WebArena → 22% in production."</b> An unsourced rhetorical framing device with no methodology, and it appears to misread WebArena's <em>human</em> baseline as an agent score.</li>
+          <li><b>"68% of self-healing setups fail."</b> The author self-discloses it is not peer-reviewed — it is one person's informal audit of 34 client projects.</li>
+          <li><b>"57% of testers abandoned self-healing within six months"</b> and <b>"61% reported unexpected test behaviour."</b> Cited only secondhand; neither original could be located.</li>
+          <li><b>"31% more time debugging AI decisions across 437 enterprise implementations."</b> Unsourced vendor SEO content with invented-sounding precision.</li>
+          <li><b>Accuracy claims with no disclosed methodology:</b> 99.9% self-healing accuracy, 95% first-attempt success, 83% maintenance reduction, 99% false-positive reduction, "pixel-perfect" conversion.</li>
+          <li><b>Popular "agentic QA architecture" explainers</b> that name plan-act-verify and semantic healing but supply no mechanism for either, with unattributed supporting figures.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="sources">
+      <h2>Sources</h2>
+      <p class="sec-note">Fetched directly unless noted</p>
+      <div class="src">
+        <p><b>Healing &amp; execution</b> — Applitools Execution Cloud self-healing docs · Healenium (github.com/healenium) · Stagehand v4 act docs · Playwright test-agents &amp; test-snapshots docs · Momentic agentic-testing docs · Meticulous how-it-works · Katalon self-healing docs · Autify MLUI engineering blog · Skyvern engineering blog</p>
+        <p><b>Papers</b> — arXiv 2310.02046 VON Similo LLM · 2301.03863 VON Similo · 2312.05778 explanation-consistency repair · 2604.09718 Agentic Compilation · 2601.06034 RAG-grounded generation · 2307.13854 WebArena · 2310.11441 Set-of-Mark · ROBULA+ (JSEP 2016)</p>
+        <p><b>Design intelligence</b> — Applitools match-levels &amp; Root Cause Analysis · Argos diff-algorithm docs · Chromatic TurboSnap · designtokens.org format spec + W3C stable-version announcement · Kong design-tokens Stylelint plugin · arXiv 2009.01417 OwlEyes · 2205.13945 Nighthawk · 2407.08850 UICrit · 2404.12500 UIClip · Deque Automated Accessibility Coverage Report · Figma AI Design QA Agent</p>
+        <p><b>Practitioner reception</b> — club.ministryoftesting.com self-healing thread · tjmaher.com 2026 James Bach workshop notes · Hacker News (Algolia comment search, four queries) · dev.to consultant field report · Elastic Security Labs AI vulnerability triage · Octomind engineering blog · BrowserStack visual-testing false-positive guide · Browser Use benchmark cost report · Steel.dev WebArena leaderboard</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">Research compiled 3 September 2026 · No implementation decisions made · Unverified figures quarantined rather than cited</div>
+</footer>

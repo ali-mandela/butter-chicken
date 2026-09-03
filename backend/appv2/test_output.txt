@@ -1,0 +1,80 @@
+﻿..........................F........................F.................... [ 87%]
+..........                                                               [100%]
+================================== FAILURES ===================================
+___ TestTier1HeuristicResolution.test_tier1_resolves_uncompiled_action_step ___
+
+self = <tests.test_executor.TestTier1HeuristicResolution object at 0x00000294D31B9890>
+fixture_url = 'file:///B:/projects/aviar-hc/backend/appv2/tests/fixtures/login.html'
+
+    def test_tier1_resolves_uncompiled_action_step(self, fixture_url: str):
+        """ACTION step with selector=None and a heuristic match should pass with source=HEURISTIC."""
+        steps = [
+            Step(
+                id="s1",
+                kind=StepKind.ACTION,
+                verb="fill",
+                target="username",
+                value="test",
+                selector=None,  # Uncompiled, will use Tier 1
+            ),
+            Step(
+                id="s2",
+                kind=StepKind.ACTION,
+                verb="fill",
+                target="password",
+                value="test",
+                selector=Selector(strategy="placeholder", value="Password"),
+            ),
+            Step(
+                id="s3",
+                kind=StepKind.ACTION,
+                verb="click",
+                target="login button",
+                selector=None,  # Uncompiled, will use Tier 1
+            ),
+            Step(
+                id="s4",
+                kind=StepKind.ASSERTION,
+                verb="wait_visible",
+                target="products",
+                selector=Selector(strategy="text", value="Products"),
+            ),
+        ]
+        test = make_test(fixture_url, steps)
+        result = run_test(test, headless=True)
+    
+        # First step should pass with HEURISTIC source
+>       assert result.results[0].status == "passed"
+E       AssertionError: assert 'failed' == 'passed'
+E         
+E         - passed
+E         + failed
+
+tests\test_executor.py:336: AssertionError
+________________ TestScoreNode.test_partial_match_scores_less _________________
+
+self = <tests.test_resolve.TestScoreNode object at 0x00000294D3303FD0>
+
+    def test_partial_match_scores_less(self):
+        """Partial token match should score less than 1.0."""
+        node = Node(
+            ref="e0",
+            role="button",
+            name="submit form",
+            tag="button",
+            placeholder=None,
+            testid=None,
+            visible=True,
+        )
+        # Target "submit page form" has tokens ["submit", "page", "form"]
+        # Node "submit form" has tokens ["submit", "form"]
+        # Matched tokens: "submit", "form" (2/3) → 0.666... * 0.8 = ~0.533
+        score, why = score_node(node, "submit page form")
+>       assert 0.4 <= score <= 0.7
+E       assert 1.0 <= 0.7
+
+tests\test_resolve.py:177: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_executor.py::TestTier1HeuristicResolution::test_tier1_resolves_uncompiled_action_step
+FAILED tests/test_resolve.py::TestScoreNode::test_partial_match_scores_less
+2 failed, 80 passed in 33.97s

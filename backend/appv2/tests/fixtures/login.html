@@ -1,0 +1,15 @@
+<!doctype html>
+<html><body>
+<label for="user">Username</label>
+<input id="user" placeholder="Username">
+<label for="pass">Password</label>
+<input id="pass" type="password" placeholder="Password">
+<button id="cancel">Cancel</button>
+<button id="login" data-testid="login-submit">Login</button>
+<h1 id="products" style="display:none">Products</h1>
+<script>
+document.getElementById('login').addEventListener('click', function () {
+  document.getElementById('products').style.display = 'block';
+});
+</script>
+</body></html>
