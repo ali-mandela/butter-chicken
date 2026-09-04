@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 from playwright.sync_api import sync_playwright
@@ -9,6 +10,7 @@ from playwright._impl._errors import TimeoutError as PlaywrightTimeoutError
 
 from aivar.browser import Browser, SelectorConfigError, build_locator
 from aivar.config import DEFAULTS, Guardrails
+from aivar.llm import LLMConfig
 from aivar.models import (
     CompiledTest,
     FailureKind,
@@ -19,11 +21,17 @@ from aivar.models import (
     StepKind,
     StepResult,
 )
-from aivar.resolve import best
+from aivar.resolve import best, shortlist
 from aivar.secrets import MissingSecretError, redact, resolve_value
 from aivar.target import Target
 
 logger = logging.getLogger("aivar")
+
+# How long to probe a compiled (tier 0) selector before deciding it has drifted.
+# Deliberately shorter than action_timeout_ms: a stale selector is a normal event
+# on a changed page, and we do not want to pay the full timeout twice before the
+# cascade gets its turn.
+TIER0_PROBE_TIMEOUT_MS = 2000
 
 # Re-export for backwards compatibility
 __all__ = ["SelectorConfigError", "build_locator", "run_test"]
@@ -36,6 +44,9 @@ def run_test(
     target: Target | None = None,
     headless: bool | None = None,
     url_override: str | None = None,
+    llm_config: LLMConfig | None = None,
+    heal: bool = False,
+    quarantine_dir: str | Path = "quarantine",
 ) -> RunResult:
     """
     Execute a CompiledTest deterministically.
@@ -65,6 +76,9 @@ def run_test(
     browser = None
     page = None
     browser_wrapper = None
+    heals_used = 0
+    cost_usd = 0.0
+    heal_proposals: list = []
 
     try:
         # Launch browser
@@ -161,7 +175,34 @@ def run_test(
             selector_to_use = step.selector
             source = Source.CACHE
 
+            # TIER 0 PROBE. A compiled selector that no longer resolves is exactly
+            # what selector drift looks like, and it is the case self-healing exists
+            # for. ACTION steps must therefore fall through to Tier 1/2 so the
+            # cascade can repair it -- without this probe, healing is unreachable
+            # because `selector_to_use` would stay set and skip both lower tiers.
+            #
+            # ASSERTION steps deliberately do NOT fall through. A missing element
+            # that an assertion named is the finding itself, not a lookup problem to
+            # route around; it is left to fail as ASSERTION_FAILED below.
+            if selector_to_use is not None and step.kind == StepKind.ACTION:
+                try:
+                    browser_wrapper.wait_attached(
+                        selector_to_use, min(guardrails.action_timeout_ms, TIER0_PROBE_TIMEOUT_MS)
+                    )
+                except PlaywrightTimeoutError:
+                    logger.info(
+                        f"Step {step_index} ({step.id}): tier 0 selector is stale "
+                        f"({selector_to_use.strategy}={selector_to_use.value!r}) - falling through"
+                    )
+                    selector_to_use = None
+                    source = Source.NONE
+                except SelectorConfigError:
+                    # A malformed selector is a configuration bug, not drift. Leave it
+                    # in place so the main wait_attached below classifies it AGENT_ERROR.
+                    pass
+
             # TIER 1: For ACTION steps only, if no selector or Tier 0 misses, try heuristic
+            tier1_candidates = None
             if selector_to_use is None and step.kind == StepKind.ACTION:
                 # Try heuristic resolution
                 try:
@@ -173,11 +214,64 @@ def run_test(
                         logger.info(
                             f"Step {step_index} ({step.id}): heuristic resolved to {candidate.why}"
                         )
+                    else:
+                        # Tier 1 failed but shortlist exists; save for potential healing
+                        tier1_candidates = shortlist(nodes, step.target, limit=5)
                 except Exception as e:
                     # Snapshot or resolution failed; continue with None selector
                     logger.warning(
                         f"Step {step_index} ({step.id}): heuristic resolution failed: {e}"
                     )
+
+            # TIER 2: Healing (only if Tier 1 completely failed but candidates exist)
+            heal_error = None
+            if (
+                selector_to_use is None
+                and step.kind == StepKind.ACTION
+                and tier1_candidates
+                and heal
+                and llm_config is not None
+            ):
+                # Try to heal
+                if heals_used >= guardrails.max_heals_per_run:
+                    heal_error = f"heal cap reached ({guardrails.max_heals_per_run} per run)"
+                    logger.info(f"Step {step_index} ({step.id}): healing blocked - {heal_error}")
+                else:
+                    try:
+                        from aivar.healer import propose_heal
+                        from aivar.quarantine import save_proposal
+
+                        proposal, reason, llm_response = propose_heal(
+                            test_id=test.id,
+                            step=step,
+                            candidates=tier1_candidates,
+                            config=llm_config,
+                            guardrails=guardrails,
+                        )
+
+                        if proposal:
+                            # Accept and use the healed selector for this run
+                            selector_to_use = proposal.new
+                            source = Source.HEALED
+                            save_proposal(proposal, quarantine_dir)
+                            heal_proposals.append(proposal)
+                            heals_used += 1
+                            if llm_response:
+                                cost_usd += llm_response.cost_usd
+                            logger.info(
+                                f"Step {step_index} ({step.id}): healed with confidence {proposal.confidence:.2f}"
+                            )
+                        else:
+                            # Proposal was rejected
+                            heal_error = reason
+                            logger.info(
+                                f"Step {step_index} ({step.id}): healing rejected - {reason}"
+                            )
+                    except Exception as e:
+                        heal_error = f"healing failed: {e}"
+                        logger.warning(
+                            f"Step {step_index} ({step.id}): {heal_error}"
+                        )
 
             # If we still don't have a selector at this point:
             # - ACTION steps fail with LOCATOR_NOT_FOUND
@@ -190,6 +284,7 @@ def run_test(
                     # ASSERTION step with no selector = assertion failed
                     # This is the anti-masking rule: assertions are Tier 0 only
                     failure_kind = FailureKind.ASSERTION_FAILED
+                error_text = heal_error or "Step target could not be resolved"
                 results.append(
                     StepResult(
                         step_id=step.id,
@@ -197,11 +292,11 @@ def run_test(
                         source=source,
                         duration_ms=duration_ms,
                         failure=failure_kind,
-                        error="Step target could not be resolved",
+                        error=error_text,
                     )
                 )
                 logger.info(
-                    f"Step {step_index} ({step.id}): failed ({failure_kind.value}) - target not resolved"
+                    f"Step {step_index} ({step.id}): failed ({failure_kind.value}) - {error_text}"
                 )
                 any_failed = True
                 continue
@@ -352,4 +447,10 @@ def run_test(
             except Exception:
                 pass
 
-    return RunResult.from_results(test.id, results)
+    return RunResult.from_results(
+        test.id,
+        results,
+        cost_usd=cost_usd,
+        heals_used=heals_used,
+        heal_proposals=heal_proposals,
+    )

@@ -46,6 +46,12 @@ def main() -> int:
     run_parser.add_argument(
         "--no-report", action="store_true", help="Skip writing report file"
     )
+    run_parser.add_argument(
+        "--heal", action="store_true", help="Enable self-healing for failed steps"
+    )
+    run_parser.add_argument(
+        "--quarantine-dir", default="quarantine", help="Directory for heal proposals (default: quarantine)"
+    )
 
     args = parser.parse_args()
 
@@ -117,9 +123,25 @@ def handle_run(args) -> int:
         logger.error(f"Failed to load test: {e}")
         return 1
 
+    # If --heal is passed, require LLM config
+    llm_config = None
+    if args.heal:
+        try:
+            llm_config = LLMConfig.from_env()
+        except LLMError as e:
+            logger.error(f"--heal requires a valid API key: {e}")
+            return 2
+
     try:
         target = Target(url=test.url, headless=not args.headed)
-        result = run_test(test, target=target, headless=not args.headed)
+        result = run_test(
+            test,
+            target=target,
+            headless=not args.headed,
+            llm_config=llm_config,
+            heal=args.heal,
+            quarantine_dir=args.quarantine_dir,
+        )
 
         # Print text report
         report_text = render_text(test, result)
