@@ -1,0 +1,51 @@
+{
+  "id": "saucedemo-login",
+  "intent": "Log in with valid credentials and verify the products page loads",
+  "url": "https://www.saucedemo.com",
+  "version": 1,
+  "steps": [
+    {
+      "id": "s1",
+      "kind": "action",
+      "verb": "fill",
+      "target": "username field",
+      "value": "${AIVAR_SAUCE_USER:-standard_user}",
+      "selector": {
+        "strategy": "placeholder",
+        "value": "Username"
+      }
+    },
+    {
+      "id": "s2",
+      "kind": "action",
+      "verb": "fill",
+      "target": "password field",
+      "value": "${AIVAR_SAUCE_PASSWORD:-secret_sauce}",
+      "selector": {
+        "strategy": "placeholder",
+        "value": "Password"
+      }
+    },
+    {
+      "id": "s3",
+      "kind": "action",
+      "verb": "click",
+      "target": "login button",
+      "selector": {
+        "strategy": "role",
+        "value": "Login",
+        "role": "button"
+      }
+    },
+    {
+      "id": "s4",
+      "kind": "assertion",
+      "verb": "wait_visible",
+      "target": "products header",
+      "selector": {
+        "strategy": "text",
+        "value": "Products"
+      }
+    }
+  ]
+}

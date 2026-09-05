@@ -1,1 +1,8 @@
-backend/.env
+﻿backend/.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+artifacts/
+quarantine/
+baselines/

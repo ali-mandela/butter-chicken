@@ -1,0 +1,18 @@
+<!doctype html>
+<html><body>
+<div class="login_wrapper" data-test="login-container">
+  <input id="user-name" data-test="username" placeholder="Username">
+  <input id="password" type="password" data-test="password" placeholder="Password">
+  <input type="submit" id="login-button" data-test="login-button" value="Login">
+</div>
+<div data-test="login-credentials-container">
+  <div data-test="login-credentials">Accepted usernames are: standard_user</div>
+  <div data-test="login-password">Password for all users: secret_sauce</div>
+</div>
+<h1 id="products" style="display:none" data-test="title">Products</h1>
+<script>
+document.getElementById('login-button').addEventListener('click', function () {
+  document.getElementById('products').style.display = 'block';
+});
+</script>
+</body></html>

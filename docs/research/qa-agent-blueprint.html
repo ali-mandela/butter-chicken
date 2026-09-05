@@ -1,0 +1,496 @@
+<title>QA Agent Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#F2F5F4; --surface:#FBFCFC; --surface-2:#E7EDEC;
+  --ink:#111918; --ink-2:#3D4A48; --muted:#667472; --rule:#D3DCDA;
+  --accent:#1B5E63; --accent-soft:#DDEBEB;
+  --det:#2F6B3D; --det-soft:#E0ECE2;
+  --ai:#8A6516; --ai-soft:#F1E8D4;
+  --stop:#8C2F2F; --stop-soft:#F1DFDF;
+  --display:"Newsreader",Georgia,serif;
+  --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1413; --surface:#151D1C; --surface-2:#1D2726;
+    --ink:#E4EAE9; --ink-2:#B4C0BE; --muted:#849693; --rule:#2B3736;
+    --accent:#5FB3AC; --accent-soft:#16302E;
+    --det:#79BE87; --det-soft:#152616;
+    --ai:#D3A95B; --ai-soft:#2A2314;
+    --stop:#D98B8B; --stop-soft:#2B1919;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1413; --surface:#151D1C; --surface-2:#1D2726;
+  --ink:#E4EAE9; --ink-2:#B4C0BE; --muted:#849693; --rule:#2B3736;
+  --accent:#5FB3AC; --accent-soft:#16302E;
+  --det:#79BE87; --det-soft:#152616;
+  --ai:#D3A95B; --ai-soft:#2A2314;
+  --stop:#D98B8B; --stop-soft:#2B1919;
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display); font-weight:500; text-wrap:balance; margin:0}
+.wrap{max-width:1000px; margin:0 auto; padding:0 24px}
+
+/* masthead */
+.mast{border-bottom:1px solid var(--rule); padding:52px 0 40px}
+.eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin:0 0 16px}
+.mast h1{font-size:clamp(36px,5.6vw,58px); line-height:1.05; letter-spacing:-.02em; max-width:14ch}
+.mast .lede{font-family:var(--display); font-size:clamp(18px,2.2vw,22px); line-height:1.5; color:var(--ink-2); max-width:58ch; margin:18px 0 0}
+.mast .lede b{color:var(--ink); font-weight:500}
+
+/* legend */
+.legend{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; margin:34px 0 0; overflow:hidden}
+@media(max-width:760px){.legend{grid-template-columns:repeat(2,1fr)}}
+.lg{background:var(--surface); padding:14px 16px}
+.lg b{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; font-weight:600}
+.lg b::before{content:""; width:11px; height:11px; border-radius:2px; border:2px solid currentColor; flex:none}
+.lg span{display:block; margin-top:6px; font-size:12.5px; line-height:1.45; color:var(--muted)}
+.lg-det b{color:var(--det)} .lg-ai b{color:var(--ai)} .lg-stop b{color:var(--stop)} .lg-gate b{color:var(--accent)}
+
+main{padding:8px 0 90px}
+.plate{padding:52px 0 0; border-top:1px solid var(--rule); margin-top:52px}
+.plate:first-child{border-top:none; margin-top:0}
+.pnum{font-family:var(--mono); font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--accent); margin:0 0 10px}
+.plate>h2{font-size:clamp(24px,3.2vw,31px); letter-spacing:-.015em; line-height:1.2}
+.plate>.sub{font-size:16.5px; color:var(--ink-2); max-width:66ch; margin:12px 0 0}
+p{margin:0 0 15px; max-width:68ch}
+main ul,main ol{max-width:68ch; padding-left:20px; margin:0 0 16px}
+li{margin-bottom:8px}
+code{font-family:var(--mono); font-size:.86em; background:var(--surface-2); padding:1.5px 5px; border-radius:2px}
+strong{font-weight:600}
+
+/* figures */
+figure{margin:30px 0 26px; background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:26px 24px 18px; overflow-x:auto}
+figure svg{display:block; width:100%; max-width:100%; height:auto; min-width:520px; color:var(--ink)}
+figcaption{margin-top:18px; padding-top:14px; border-top:1px solid var(--rule); font-size:13.5px; line-height:1.55; color:var(--muted); max-width:78ch}
+figcaption b{color:var(--ink-2); font-weight:600}
+
+/* svg primitives */
+.bx{fill:var(--surface-2); stroke:currentColor; stroke-width:1.5}
+.bx-det{fill:var(--det-soft); stroke:var(--det); stroke-width:1.5}
+.bx-ai{fill:var(--ai-soft); stroke:var(--ai); stroke-width:1.5}
+.bx-stop{fill:var(--stop-soft); stroke:var(--stop); stroke-width:2.5}
+.bx-key{fill:var(--accent-soft); stroke:var(--accent); stroke-width:2.5}
+.ln{stroke:currentColor; stroke-width:1.4; fill:none}
+.ln-ai{stroke:var(--ai); stroke-width:1.4; fill:none}
+.ln-gate{stroke:var(--accent); stroke-width:1.4; fill:none; stroke-dasharray:5 4}
+.ln-stop{stroke:var(--stop); stroke-width:2; fill:none}
+text{font-family:var(--mono); fill:currentColor}
+.t{font-size:12.5px; font-weight:500}
+.t-sm{font-size:10.5px; fill:var(--muted)}
+.t-lb{font-size:10.5px; fill:var(--muted); font-style:italic}
+.t-key{font-size:13px; font-weight:600; fill:var(--accent)}
+.t-stop{font-size:12.5px; font-weight:600; fill:var(--stop)}
+.t-det{fill:var(--det)} .t-ai{fill:var(--ai)}
+
+/* tables */
+.scroll{overflow-x:auto; border:1px solid var(--rule); border-radius:3px; background:var(--surface); margin:0 0 22px}
+table{border-collapse:collapse; width:100%; min-width:560px; font-size:13.5px}
+th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--rule); vertical-align:top; line-height:1.5}
+thead th{font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); background:var(--surface-2); white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td code{background:none; padding:0; color:var(--accent); font-weight:500}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* callout */
+.rule-box{border-left:3px solid var(--stop); background:var(--stop-soft); padding:16px 20px; border-radius:0 3px 3px 0; margin:0 0 22px}
+.rule-box b{color:var(--stop)}
+.rule-box p{margin:0; font-size:14.5px; color:var(--ink-2); max-width:none}
+.note-box{border-left:3px solid var(--accent); background:var(--accent-soft); padding:16px 20px; border-radius:0 3px 3px 0; margin:0 0 22px}
+.note-box p{margin:0; font-size:14.5px; color:var(--ink-2); max-width:none}
+.note-box b{color:var(--accent)}
+
+/* build order */
+.steps{list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden; counter-reset:s}
+.steps li{background:var(--surface); padding:16px 20px 16px 56px; position:relative; margin:0; counter-increment:s; font-size:14px; line-height:1.55; color:var(--ink-2)}
+.steps li::before{content:counter(s,decimal-leading-zero); position:absolute; left:20px; top:16px; font-family:var(--mono); font-size:11px; font-weight:600; color:var(--accent)}
+.steps b{display:block; color:var(--ink); font-size:15px; margin-bottom:3px; font-weight:600}
+
+footer{border-top:1px solid var(--rule); padding:24px 0 56px; font-family:var(--mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <p class="eyebrow">Reference architecture · v1</p>
+    <h1>QA Agent Blueprint</h1>
+    <p class="lede">One rule shapes everything below: <b>the model runs once to write a test, then gets out of the way.</b> Every CI run after that is ordinary deterministic code. The model comes back only when a selector goes missing — never when an assertion fails.</p>
+
+    <div class="legend">
+      <div class="lg lg-det"><b>Deterministic</b><span>No model call. Free, fast, runs on every build.</span></div>
+      <div class="lg lg-ai"><b>Inference</b><span>Costs money and seconds. Should be rare.</span></div>
+      <div class="lg lg-stop"><b>Never heals</b><span>Hard stop. The system may not rewrite this.</span></div>
+      <div class="lg lg-gate"><b>Human-owned</b><span>A person approves before it takes effect.</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="plate">
+  <p class="pnum">Plate 01 · The whole system</p>
+  <h2>Three phases around one artifact</h2>
+  <p class="sub">Most people picture a QA agent as a loop that thinks on every run. That design is roughly 1500× more expensive and non-reproducible. The working shape is three separate phases that meet at a single file.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 630" role="img" aria-label="Three phases around a compiled test file: an authoring phase using a language model produces the file, an execution phase reads it with no inference, and a healing phase proposes fixes that a human must approve before they re-enter the file.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <polygon points="0,1 10,5 0,9" fill="currentColor"/>
+        </marker>
+        <marker id="a1g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <polygon points="0,1 10,5 0,9" fill="var(--accent)"/>
+        </marker>
+      </defs>
+
+      <text class="t-sm t-ai" x="60" y="14">PHASE 1 — AUTHOR · once per test</text>
+      <rect class="bx" x="60" y="22" width="250" height="52" rx="3"/>
+      <text class="t" x="185" y="45" text-anchor="middle">Test intent</text>
+      <text class="t-sm" x="185" y="61" text-anchor="middle">plain English, from a human</text>
+
+      <line class="ln" x1="185" y1="74" x2="185" y2="100" marker-end="url(#a1)"/>
+
+      <rect class="bx-ai" x="60" y="104" width="250" height="52" rx="3"/>
+      <text class="t" x="185" y="127" text-anchor="middle">Planner agent</text>
+      <text class="t-sm" x="185" y="143" text-anchor="middle">one model call → step list</text>
+
+      <line class="ln" x1="185" y1="156" x2="185" y2="184" marker-end="url(#a1)"/>
+
+      <rect class="bx-ai" x="60" y="188" width="250" height="52" rx="3"/>
+      <text class="t" x="185" y="211" text-anchor="middle">Dry run on the live app</text>
+      <text class="t-sm" x="185" y="227" text-anchor="middle">resolve every selector for real</text>
+
+      <line class="ln" x1="185" y1="240" x2="185" y2="272" marker-end="url(#a1)"/>
+      <text class="t-lb" x="196" y="261">compile</text>
+
+      <rect class="bx-key" x="40" y="276" width="290" height="66" rx="3"/>
+      <text class="t-key" x="185" y="302" text-anchor="middle">COMPILED TEST FILE</text>
+      <text class="t-sm" x="185" y="320" text-anchor="middle">selectors + assertions, committed</text>
+      <text class="t-sm" x="185" y="334" text-anchor="middle">to git — the single source of truth</text>
+
+      <line class="ln" x1="185" y1="342" x2="185" y2="372" marker-end="url(#a1)"/>
+      <text class="t-lb" x="196" y="361">read only</text>
+
+      <text class="t-sm t-det" x="60" y="366">PHASE 2 — EXECUTE · every CI run, zero inference</text>
+
+      <rect class="bx-det" x="60" y="376" width="250" height="52" rx="3"/>
+      <text class="t" x="185" y="399" text-anchor="middle">Executor · Playwright</text>
+      <text class="t-sm" x="185" y="415" text-anchor="middle">plain code, no model</text>
+
+      <line class="ln" x1="185" y1="428" x2="185" y2="456" marker-end="url(#a1)"/>
+
+      <rect class="bx-det" x="60" y="460" width="250" height="52" rx="3"/>
+      <text class="t" x="185" y="483" text-anchor="middle">Design probes</text>
+      <text class="t-sm" x="185" y="499" text-anchor="middle">a11y · tokens · geometry</text>
+
+      <line class="ln" x1="185" y1="512" x2="185" y2="540" marker-end="url(#a1)"/>
+
+      <rect class="bx" x="60" y="544" width="250" height="50" rx="3"/>
+      <text class="t" x="185" y="566" text-anchor="middle">Report</text>
+      <text class="t-sm" x="185" y="582" text-anchor="middle">per-step source · cost · heals</text>
+
+      <text class="t-sm t-ai" x="520" y="366">PHASE 3 — HEAL · exception path only</text>
+
+      <path class="ln-ai" d="M310 402 H516" marker-end="url(#a1)" style="color:var(--ai)"/>
+      <text class="t-lb" x="413" y="394" text-anchor="middle">locator missing</text>
+
+      <rect class="bx-ai" x="520" y="376" width="280" height="52" rx="3"/>
+      <text class="t" x="660" y="399" text-anchor="middle">Heal · model re-ranks</text>
+      <text class="t-sm" x="660" y="415" text-anchor="middle">picks from a shortlist, never free search</text>
+
+      <line class="ln" x1="660" y1="428" x2="660" y2="456" marker-end="url(#a1)"/>
+
+      <rect class="bx" x="520" y="460" width="280" height="52" rx="3"/>
+      <text class="t" x="660" y="483" text-anchor="middle">Confidence + semantic gate</text>
+      <text class="t-sm" x="660" y="499" text-anchor="middle">score ≥ cap AND role/test-id agrees</text>
+
+      <line class="ln" x1="660" y1="512" x2="660" y2="540" marker-end="url(#a1)"/>
+
+      <rect class="bx-key" x="520" y="544" width="280" height="50" rx="3"/>
+      <text class="t" x="660" y="566" text-anchor="middle">Quarantine → human approves</text>
+      <text class="t-sm" x="660" y="582" text-anchor="middle">nothing lands silently</text>
+
+      <path class="ln-gate" d="M800 569 H846 V309 H334" marker-end="url(#a1g)"/>
+      <text class="t-lb" x="560" y="302">approved heals only</text>
+    </svg>
+    <figcaption><b>What to notice:</b> the compiled test file is the hub, and a human owns both ends of it. Phase 2 — the part that runs hundreds of times a day — contains no model call at all. Phase 3 can propose a change but cannot commit one. Remove the dashed arrow and the system still works; it just stops self-repairing.</figcaption>
+  </figure>
+
+  <div class="note-box"><p><b>Why not one clever loop?</b> A per-step agent re-derives the page every run, so cost scales with steps × runs and no two runs are identical. Compiling once collapses that to a fixed cost paid at authoring time — measured at <b>$0.002–$0.092 per compile</b> versus <b>$15–150</b> for the equivalent loop, with cached steps adding about <b>52ms</b> over raw Playwright.</p></div>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 02 · The inner loop</p>
+  <h2>How one step finds its element</h2>
+  <p class="sub">This runs for every step of every test. Read it as a waterfall: each tier is tried only because the one above it missed, and each tier costs more than the last.</p>
+
+  <figure>
+    <svg viewBox="0 0 840 300" role="img" aria-label="A three-tier waterfall for resolving an element: a free cache lookup, then free accessibility-tree heuristics, then a paid model re-rank over a shortlist. Any tier that hits proceeds directly to executing the action.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <polygon points="0,1 10,5 0,9" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <text class="t-sm" x="20" y="30">target: "checkout button"</text>
+      <line class="ln" x1="20" y1="42" x2="20" y2="106" marker-end="url(#a2)"/>
+
+      <rect class="bx-det" x="40" y="76" width="200" height="68" rx="3"/>
+      <text class="t" x="140" y="99" text-anchor="middle">Tier 0 · Cache</text>
+      <text class="t-sm" x="140" y="115" text-anchor="middle">the compiled selector</text>
+      <text class="t-sm" x="140" y="132" text-anchor="middle">~0 ms · free</text>
+
+      <path class="ln" d="M240 110 H296" marker-end="url(#a2)"/>
+      <text class="t-lb" x="268" y="101" text-anchor="middle">miss</text>
+
+      <rect class="bx-det" x="300" y="76" width="210" height="68" rx="3"/>
+      <text class="t" x="405" y="99" text-anchor="middle">Tier 1 · Heuristics</text>
+      <text class="t-sm" x="405" y="115" text-anchor="middle">a11y role · label · text</text>
+      <text class="t-sm" x="405" y="132" text-anchor="middle">~5 ms · free</text>
+
+      <path class="ln" d="M510 110 H566" marker-end="url(#a2)"/>
+      <text class="t-lb" x="538" y="101" text-anchor="middle">miss</text>
+
+      <rect class="bx-ai" x="570" y="76" width="240" height="68" rx="3"/>
+      <text class="t" x="690" y="99" text-anchor="middle">Tier 2 · Model re-rank</text>
+      <text class="t-sm" x="690" y="115" text-anchor="middle">picks 1 of N shortlisted</text>
+      <text class="t-sm" x="690" y="132" text-anchor="middle">1–3 s · costs money</text>
+
+      <path class="ln" d="M140 144 V222 H326" marker-end="url(#a2)"/>
+      <text class="t-lb" x="150" y="186">hit</text>
+      <path class="ln" d="M405 144 V196" marker-end="url(#a2)"/>
+      <text class="t-lb" x="415" y="172">hit</text>
+      <path class="ln" d="M690 144 V222 H574" marker-end="url(#a2)"/>
+      <text class="t-lb" x="700" y="186">hit</text>
+
+      <rect class="bx" x="330" y="196" width="240" height="54" rx="3"/>
+      <text class="t" x="450" y="219" text-anchor="middle">Execute the action</text>
+      <text class="t-sm" x="450" y="236" text-anchor="middle">click · fill · wait</text>
+
+      <text class="t-sm" x="20" y="278">In a healthy suite almost every step exits at Tier 0.</text>
+    </svg>
+    <figcaption><b>The critical detail is Tier 2's input.</b> The model never searches the page freely — Tier 1 hands it a shortlist of candidates and it only picks among them. Studies that measured both found the shortlist-plus-model arrangement scoring <b>87.8%</b> where the same heuristic alone scored <b>30.9%</b>. Letting the model search unaided is both slower and worse.</figcaption>
+  </figure>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 03 · Failure handling</p>
+  <h2>Four failures that must not be confused</h2>
+  <p class="sub">This is the plate that separates a serious system from a demo. "The test failed" is four different events, and treating them alike is exactly how self-healing earns its bad reputation.</p>
+
+  <figure>
+    <svg viewBox="0 0 940 372" role="img" aria-label="A decision tree classifying a failed step into four kinds: a missing locator which may be healed, an action failure which is retried then failed, an assertion failure which must never be healed and is reported as a candidate bug, and an agent-layer error which is reported as infrastructure rather than a test failure.">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <polygon points="0,1 10,5 0,9" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <rect class="bx" x="350" y="14" width="240" height="50" rx="3"/>
+      <text class="t" x="470" y="37" text-anchor="middle">A step failed</text>
+      <text class="t-sm" x="470" y="53" text-anchor="middle">classify before reacting</text>
+
+      <path class="ln" d="M470 64 V92"/>
+      <path class="ln" d="M125 92 H815"/>
+      <path class="ln" d="M125 92 V142" marker-end="url(#a3)"/>
+      <path class="ln" d="M355 92 V142" marker-end="url(#a3)"/>
+      <path class="ln" d="M585 92 V142" marker-end="url(#a3)"/>
+      <path class="ln" d="M815 92 V142" marker-end="url(#a3)"/>
+
+      <rect class="bx-ai" x="20" y="146" width="210" height="80" rx="3"/>
+      <text class="t" x="125" y="170" text-anchor="middle">Locator not found</text>
+      <text class="t-sm" x="125" y="188" text-anchor="middle">element is simply gone</text>
+      <text class="t-sm t-ai" x="125" y="208" text-anchor="middle">HEAL ELIGIBLE</text>
+
+      <rect class="bx" x="250" y="146" width="210" height="80" rx="3"/>
+      <text class="t" x="355" y="170" text-anchor="middle">Action failed</text>
+      <text class="t-sm" x="355" y="188" text-anchor="middle">found, but not clickable</text>
+      <text class="t-sm" x="355" y="208" text-anchor="middle">retry ×2, backoff</text>
+
+      <rect class="bx-stop" x="480" y="146" width="210" height="80" rx="3"/>
+      <text class="t-stop" x="585" y="170" text-anchor="middle">Assertion failed</text>
+      <text class="t-sm" x="585" y="188" text-anchor="middle">the app behaved wrong</text>
+      <text class="t-sm t-stop" x="585" y="208" text-anchor="middle">NEVER HEAL</text>
+
+      <rect class="bx-ai" x="710" y="146" width="210" height="80" rx="3"/>
+      <text class="t" x="815" y="170" text-anchor="middle">Agent-layer error</text>
+      <text class="t-sm" x="815" y="188" text-anchor="middle">429, timeout, bad JSON</text>
+      <text class="t-sm t-ai" x="815" y="208" text-anchor="middle">NOT A TEST FAILURE</text>
+
+      <line class="ln" x1="125" y1="226" x2="125" y2="266" marker-end="url(#a3)"/>
+      <line class="ln" x1="355" y1="226" x2="355" y2="266" marker-end="url(#a3)"/>
+      <line class="ln-stop" x1="585" y1="226" x2="585" y2="266" marker-end="url(#a3)" style="color:var(--stop)"/>
+      <line class="ln" x1="815" y1="226" x2="815" y2="266" marker-end="url(#a3)"/>
+
+      <rect class="bx" x="20" y="270" width="210" height="50" rx="3"/>
+      <text class="t-sm" x="125" y="292" text-anchor="middle">Enter heal loop</text>
+      <text class="t-sm" x="125" y="308" text-anchor="middle">counts against the cap</text>
+
+      <rect class="bx" x="250" y="270" width="210" height="50" rx="3"/>
+      <text class="t-sm" x="355" y="292" text-anchor="middle">Fail · flag as flaky</text>
+      <text class="t-sm" x="355" y="308" text-anchor="middle">timing, not structure</text>
+
+      <rect class="bx-stop" x="480" y="270" width="210" height="50" rx="3"/>
+      <text class="t-sm" x="585" y="292" text-anchor="middle">Fail · candidate bug</text>
+      <text class="t-sm" x="585" y="308" text-anchor="middle">this is the point of QA</text>
+
+      <rect class="bx" x="710" y="270" width="210" height="50" rx="3"/>
+      <text class="t-sm" x="815" y="292" text-anchor="middle">Report as infrastructure</text>
+      <text class="t-sm" x="815" y="308" text-anchor="middle">"I broke", not "app broke"</text>
+
+      <text class="t-sm" x="20" y="352">Only the leftmost branch is ever allowed to modify the compiled test file.</text>
+    </svg>
+    <figcaption><b>The third column is the whole argument.</b> The most repeated criticism of self-healing is that it hides real regressions — a <em>Pay now</em> button disappears, healing grabs a similar-looking wrong one, the test goes green, the bug ships. Making assertion failures structurally ineligible for healing removes that failure mode by construction rather than by good intentions.</figcaption>
+  </figure>
+
+  <div class="rule-box"><p><b>The one rule to never break:</b> a failing assertion is a candidate bug, not a candidate repair. Locator drift may be healed. Behaviour may not.</p></div>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 04 · The design half</p>
+  <h2>Order the checks by what they're anchored to</h2>
+  <p class="sub">"Design intelligence" is reliable in exact proportion to how much external specification it checks against. That single idea sorts every possible check into three columns — and tells you what to build first.</p>
+
+  <figure>
+    <svg viewBox="0 0 910 342" role="img" aria-label="Design checks sorted into three columns by what they are anchored to: checks anchored to a written specification are deterministic and need no baseline, checks anchored to a stored baseline need human approval, and checks anchored to nothing are unreliable.">
+      <rect class="bx-det" x="30" y="16" width="270" height="46" rx="3"/>
+      <text class="t" x="165" y="38" text-anchor="middle">Anchored to a spec</text>
+      <text class="t-sm" x="165" y="54" text-anchor="middle">deterministic · no baseline</text>
+
+      <rect class="bx" x="320" y="16" width="270" height="46" rx="3"/>
+      <text class="t" x="455" y="38" text-anchor="middle">Anchored to a baseline</text>
+      <text class="t-sm" x="455" y="54" text-anchor="middle">needs a human to approve</text>
+
+      <rect class="bx-stop" x="610" y="16" width="270" height="46" rx="3"/>
+      <text class="t-stop" x="745" y="38" text-anchor="middle">Anchored to nothing</text>
+      <text class="t-sm" x="745" y="54" text-anchor="middle">a judgment call</text>
+
+      <rect class="bx-det" x="30" y="82" width="270" height="54" rx="3"/>
+      <text class="t" x="165" y="105" text-anchor="middle">Accessibility · axe-core</text>
+      <text class="t-sm" x="165" y="122" text-anchor="middle">WCAG · 57% of real defects</text>
+
+      <rect class="bx-det" x="30" y="146" width="270" height="54" rx="3"/>
+      <text class="t" x="165" y="169" text-anchor="middle">Design tokens</text>
+      <text class="t-sm" x="165" y="186" text-anchor="middle">W3C format · lint rules</text>
+
+      <rect class="bx-det" x="30" y="210" width="270" height="54" rx="3"/>
+      <text class="t" x="165" y="233" text-anchor="middle">Layout geometry</text>
+      <text class="t-sm" x="165" y="250" text-anchor="middle">overlap · truncation · grid</text>
+
+      <rect class="bx" x="320" y="82" width="270" height="54" rx="3"/>
+      <text class="t" x="455" y="105" text-anchor="middle">Visual regression</text>
+      <text class="t-sm" x="455" y="122" text-anchor="middle">pixel + structural diff</text>
+
+      <rect class="bx" x="320" y="146" width="270" height="54" rx="3"/>
+      <text class="t" x="455" y="169" text-anchor="middle">Design-file conformance</text>
+      <text class="t-sm" x="455" y="186" text-anchor="middle">nobody ships this yet</text>
+
+      <rect class="bx-stop" x="610" y="82" width="270" height="54" rx="3"/>
+      <text class="t-stop" x="745" y="105" text-anchor="middle">"Does this look good?"</text>
+      <text class="t-sm" x="745" y="122" text-anchor="middle">13% of critiques valid</text>
+
+      <line class="ln" x1="30" y1="288" x2="880" y2="288"/>
+      <text class="t-sm t-det" x="30" y="310">BUILD FIRST</text>
+      <text class="t-sm" x="30" y="326">cheap, no approval queue,</text>
+      <text class="t-sm" x="30" y="340">catches real bugs day one</text>
+      <text class="t-sm" x="320" y="310">BUILD SECOND</text>
+      <text class="t-sm" x="320" y="326">budget most of the effort on</text>
+      <text class="t-sm" x="320" y="340">noise suppression, not diffing</text>
+      <text class="t-sm t-stop" x="610" y="310">RANK, NEVER DETECT</text>
+      <text class="t-sm" x="610" y="326">"which of these two is better",</text>
+      <text class="t-sm" x="610" y="340">never "score this out of ten"</text>
+    </svg>
+    <figcaption><b>Counter-intuitive but well-evidenced:</b> the least glamorous column is the only one that works unattended. Accessibility and token checks need no baseline, never need approval, and catch real defects that pass every functional test. Visual regression is genuinely useful but its true cost is the approval queue — that, not diff accuracy, is why teams switch it off.</figcaption>
+  </figure>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 05 · The tool surface</p>
+  <h2>What the agent can actually call</h2>
+  <p class="sub">Keep this list short and boring. Every tool is a place the system can misbehave, and a small surface is what makes the runs reproducible.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Tool</th><th>Returns</th><th>Who calls it</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><code>browser.snapshot()</code></td><td>Accessibility tree, each node with a stable ref</td><td>Planner, Heal</td><td class="num">free</td></tr>
+      <tr><td><code>browser.act(ref, verb, value)</code></td><td>Success, or a typed failure</td><td>Executor</td><td class="num">free</td></tr>
+      <tr><td><code>browser.screenshot(scope)</code></td><td>PNG for diffing or for the report</td><td>Probes</td><td class="num">free</td></tr>
+      <tr><td><code>resolve.shortlist(target)</code></td><td>Top-N candidate refs with scores</td><td>Executor, Heal</td><td class="num">free</td></tr>
+      <tr><td><code>probe.a11y()</code></td><td>WCAG violations with node refs</td><td>Probes</td><td class="num">free</td></tr>
+      <tr><td><code>probe.tokens()</code></td><td>Off-system values with source location</td><td>Probes</td><td class="num">free</td></tr>
+      <tr><td><code>probe.geometry()</code></td><td>Overlaps, truncation, off-grid spacing</td><td>Probes</td><td class="num">free</td></tr>
+      <tr><td><code>probe.visual_diff(baseline)</code></td><td>Changed regions above threshold</td><td>Probes</td><td class="num">free</td></tr>
+      <tr><td><code>store.compiled(test_id)</code></td><td>The committed selectors and assertions</td><td>Executor</td><td class="num">free</td></tr>
+      <tr><td><code>store.quarantine(heal)</code></td><td>Writes a proposal for human review</td><td>Heal</td><td class="num">free</td></tr>
+      <tr><td><code>llm.plan(intent)</code></td><td>Ordered step list</td><td>Planner · <b>once per test</b></td><td class="num">$$</td></tr>
+      <tr><td><code>llm.rerank(target, shortlist)</code></td><td>One choice + reasoning + confidence</td><td>Heal · <b>on miss only</b></td><td class="num">$$</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>Two calls out of twelve cost money, and neither runs during a normal green build. If your cost report shows otherwise, something is calling the model in the hot path.</p>
+
+  <h3>Guardrail constants</h3>
+  <p>Put these in config, print them in every report, and fail the run when one is exceeded.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Constant</th><th>Suggested</th><th>What it prevents</th></tr></thead>
+    <tbody>
+      <tr><td><code>max_heals_per_run</code></td><td class="num">3</td><td>A cascade of heals quietly rewriting a whole test</td></tr>
+      <tr><td><code>min_heal_confidence</code></td><td class="num">0.5</td><td>Accepting a weak guess as a match</td></tr>
+      <tr><td><code>require_semantic_match</code></td><td class="num">true</td><td>The <em>Pay now</em> failure — visual similarity alone is not enough</td></tr>
+      <tr><td><code>heal_assertions</code></td><td class="num">false</td><td>Masking a real regression. Never make this configurable</td></tr>
+      <tr><td><code>max_cost_per_run</code></td><td class="num">$0.50</td><td>Silent budget drift as the suite grows</td></tr>
+      <tr><td><code>action_retries</code></td><td class="num">2</td><td>Timing flake being misread as structural breakage</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 06 · A worked run</p>
+  <h2>One login test, step by step</h2>
+  <p class="sub">The same test on its first run and on a later run where a developer renamed the submit button. Follow the <em>source</em> column — that's what the report shows a human.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Step</th><th>First run (authoring)</th><th>Run 40 (button renamed)</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Open the app</td><td>navigate</td><td>navigate</td><td class="num">—</td></tr>
+      <tr><td class="num">2</td><td>Type the username</td><td>snapshot → shortlist → resolve → compile</td><td>cache hit, ~0 ms</td><td class="num">cache</td></tr>
+      <tr><td class="num">3</td><td>Type the password</td><td>same</td><td>cache hit, ~0 ms</td><td class="num">cache</td></tr>
+      <tr><td class="num">4</td><td>Click submit</td><td>same</td><td><b>cache miss</b> → tier 1 miss → <code>llm.rerank</code> over 4 candidates → confidence 0.81, role <code>button</code> matches → quarantined</td><td class="num">healed</td></tr>
+      <tr><td class="num">5</td><td>Assert products page visible</td><td>assertion recorded</td><td>passes — and would <b>never</b> have been healed if it failed</td><td class="num">assert</td></tr>
+      <tr><td class="num">6</td><td>Probe the page</td><td>baseline captured</td><td>2 contrast violations, 1 off-token spacing</td><td class="num">probe</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>The run reports: <strong>passed, 1 heal pending approval, 3 design findings, $0.004.</strong> A human sees the proposed selector change with its reasoning and confidence, approves or rejects it, and only then does the compiled file change. Run 41 is back to a full cache hit and costs nothing.</p>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 07 · Build order</p>
+  <h2>What to build, in sequence</h2>
+  <p class="sub">Each stage is useful on its own and testable before the next begins. Resist building the healing loop early — it is the most interesting part and the least useful without the parts beneath it.</p>
+
+  <ol class="steps">
+    <li><b>Deterministic executor first</b>Hand-write one compiled test as JSON — selectors and assertions — and an executor that runs it with Playwright. No model anywhere. You now have something real that passes and fails honestly.</li>
+    <li><b>The resolution cascade, tiers 0 and 1</b>Add cache lookup and accessibility-tree heuristics. Still no model. Most steps should already resolve; where they don't, you have learned what the model will need to handle.</li>
+    <li><b>The planner</b>One model call turning plain English into a step list, plus a dry run that verifies every selector resolves before anything is written to disk. This is the authoring phase, complete.</li>
+    <li><b>Failure classification</b>Implement Plate 03 before implementing healing. Four distinct failure types, four distinct report lines. Assertion failures marked un-healable in the type system, not in a comment.</li>
+    <li><b>Tier 2 and the heal loop</b>Model re-ranking over a shortlist, the confidence and semantic gates, the heal cap, and the quarantine file. Nothing writes to the compiled test without approval.</li>
+    <li><b>Spec-anchored design probes</b>axe-core, token linting, geometry checks. No baselines, no approval queue, immediate real findings. This is where the "design intelligence" half starts paying off.</li>
+    <li><b>Visual regression, carefully</b>Only once the above is stable, and budget most of the work on noise suppression — ignore regions, frozen animations, layout-level matching — rather than on the diff itself.</li>
+    <li><b>The report</b>Per-step source, heal ledger, cost, design findings, and the approval queue. Everything a human needs to trust or distrust the run, on one page.</li>
+  </ol>
+
+  <div class="note-box"><p><b>If you build only stages 1 through 4</b>, you have a genuinely useful, fully deterministic QA agent with honest failure reporting. Everything after that is improvement, not foundation — which is the right way round.</p></div>
+</section>
+
+</main>
+
+<footer><div class="wrap">Reference architecture · derived from the landscape research · every constant here is a starting default, not a law</div></footer>

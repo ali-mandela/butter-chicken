@@ -1,0 +1,16 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- B:\projects\aviar-hc\backend\appv2\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: B:\projects\aviar-hc\backend\appv2
+configfile: pyproject.toml
+plugins: anyio-4.15.0
+collecting ... collected 11 items / 5 deselected / 6 selected
+
+tests/test_store.py::TestLiveStore::test_init_schema_idempotent PASSED   [ 16%]
+tests/test_store.py::TestLiveStore::test_save_and_get_run PASSED         [ 33%]
+tests/test_store.py::TestLiveStore::test_save_same_report_twice_is_idempotent PASSED [ 50%]
+tests/test_store.py::TestLiveStore::test_list_runs_includes_saved PASSED [ 66%]
+tests/test_store.py::TestLiveStore::test_delete_run_removes_it PASSED    [ 83%]
+tests/test_store.py::TestLiveStore::test_delete_nonexistent_returns_false PASSED [100%]
+
+====================== 6 passed, 5 deselected in 14.42s =======================

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+quarantine/
+artifacts/
+tests/generated/
+
+# Secrets. Never commit: this holds the database URL and API keys.
+.env
+.env.*
+!.env.example

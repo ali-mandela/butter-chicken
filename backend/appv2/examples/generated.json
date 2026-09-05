@@ -1,0 +1,50 @@
+{
+  "id": "test_1",
+  "intent": "Log in with a valid username and password, then verify the products page loads",
+  "url": "https://www.saucedemo.com",
+  "steps": [
+    {
+      "id": "s1",
+      "kind": "action",
+      "verb": "fill",
+      "target": "username field",
+      "value": "${AIVAR_USERNAME}",
+      "selector": {
+        "strategy": "css",
+        "value": "[data-test=\"username\"]"
+      }
+    },
+    {
+      "id": "s2",
+      "kind": "action",
+      "verb": "fill",
+      "target": "password field",
+      "value": "${AIVAR_PASSWORD}",
+      "selector": {
+        "strategy": "css",
+        "value": "[data-test=\"password\"]"
+      }
+    },
+    {
+      "id": "s3",
+      "kind": "action",
+      "verb": "click",
+      "target": "Login button",
+      "selector": {
+        "strategy": "css",
+        "value": "[data-test=\"login-button\"]"
+      }
+    },
+    {
+      "id": "s4",
+      "kind": "assertion",
+      "verb": "wait_visible",
+      "target": "products page",
+      "selector": {
+        "strategy": "css",
+        "value": "[data-test=\"title\"]"
+      }
+    }
+  ],
+  "version": 1
+}
