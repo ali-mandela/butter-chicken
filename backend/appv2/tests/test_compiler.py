@@ -5,10 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from aivar.compiler import apply_credentials, compile_test, CompileReport
+from aivar.compiler import apply_credentials, compile_test, CompileReport, INVALID_CREDENTIALS
+from aivar.contracts import FlowKind
 from aivar.executor import run_test
 from aivar.llm import LLMConfig, LLMResponse
-from aivar.models import StepKind
+from aivar.models import Step, StepKind
 from aivar.planner import PlannedStep
 from aivar.testfile import load_test
 
@@ -128,8 +129,273 @@ class TestLiveCompilation:
 
 
 class TestApplyCredentials:
-    """Test the apply_credentials function."""
+    """Test the apply_credentials function with new flow-kind awareness."""
 
+    # Rule 1: Non-fill verbs never get credentials
+    def test_click_never_receives_credential(self):
+        """Test that click steps never receive credentials, whatever the flow kind."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="click",
+            target="Login",
+            value=None,
+        )
+        credentials = {"username": "user", "password": "pass"}
+
+        # Happy path
+        assert apply_credentials(step, credentials, flow_kind=FlowKind.HAPPY_PATH) is None
+        # Negative flow
+        assert apply_credentials(step, credentials, flow_kind=FlowKind.NEGATIVE) is None
+        # Error state
+        assert apply_credentials(step, credentials, flow_kind=FlowKind.ERROR_STATE) is None
+
+    # Rule 2: Preserve existing literal values
+    def test_preserves_literal_value(self):
+        """Test that a step with an existing literal value is untouched in every mode."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value="hardcoded_value",
+        )
+        credentials = {"username": "testuser", "password": "testpass"}
+
+        # Should preserve in all modes
+        assert apply_credentials(step, credentials, flow_kind=FlowKind.HAPPY_PATH) == "hardcoded_value"
+        assert apply_credentials(step, credentials, flow_kind=FlowKind.NEGATIVE) == "hardcoded_value"
+        assert apply_credentials(step, credentials, flow_kind=FlowKind.ERROR_STATE) == "hardcoded_value"
+
+    # Rule 3: Empty-field tests stay empty
+    def test_empty_field_tests_stay_empty(self):
+        """Test that flows with 'empty' in the name return None for credentials even in NEGATIVE mode."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "testuser", "password": "testpass"}
+
+        # Rule 3 beats rule 4: even in NEGATIVE mode, empty-field test stays empty
+        result = apply_credentials(
+            step, credentials, flow_kind=FlowKind.NEGATIVE, flow_name="Login with empty fields"
+        )
+        assert result is None
+
+    def test_blank_field_indicator(self):
+        """Test that 'blank' in the flow name triggers empty-field rule."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="password field",
+            value=None,
+        )
+        credentials = {"username": "user", "password": "pass"}
+
+        result = apply_credentials(step, credentials, flow_name="Submit with blank password")
+        assert result is None
+
+    def test_missing_field_indicator(self):
+        """Test that 'missing' in the flow name triggers empty-field rule."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "user", "password": "pass"}
+
+        result = apply_credentials(step, credentials, flow_name="login with missing username")
+        assert result is None
+
+    def test_no_username_indicator(self):
+        """Test that 'no username' in the flow name triggers empty-field rule."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "user", "password": "pass"}
+
+        result = apply_credentials(step, credentials, flow_name="login with no username")
+        assert result is None
+
+    def test_without_indicator(self):
+        """Test that 'without' in the flow name triggers empty-field rule."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="password field",
+            value=None,
+        )
+        credentials = {"username": "user", "password": "pass"}
+
+        result = apply_credentials(step, credentials, flow_name="submit form without password")
+        assert result is None
+
+    # Rule 4: Negative and error-state flows get invalid credentials
+    def test_negative_flow_password_gets_invalid_credential(self):
+        """Test that a NEGATIVE flow's password field gets the invalid password placeholder."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="password field",
+            value=None,
+        )
+        credentials = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
+
+        result = apply_credentials(step, credentials, flow_kind=FlowKind.NEGATIVE)
+        assert result == INVALID_CREDENTIALS["password"]
+        assert result == "${AIVAR_INVALID_PASSWORD:-wrong_password_123}"
+
+    def test_negative_flow_username_gets_invalid_credential(self):
+        """Test that a NEGATIVE flow's username field gets the invalid username placeholder."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
+
+        result = apply_credentials(step, credentials, flow_kind=FlowKind.NEGATIVE)
+        assert result == INVALID_CREDENTIALS["username"]
+        assert result == "${AIVAR_INVALID_USERNAME:-not_a_real_user}"
+
+    def test_error_state_flow_gets_invalid_credentials(self):
+        """Test that an ERROR_STATE flow's credentials are invalid."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="login field",
+            value=None,
+        )
+        credentials = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
+
+        result = apply_credentials(step, credentials, flow_kind=FlowKind.ERROR_STATE)
+        assert result == INVALID_CREDENTIALS["username"]
+
+    # Rule 5: Default behavior for other flow kinds
+    def test_happy_path_password_field(self):
+        """Test that a HAPPY_PATH flow's password field gets valid password placeholder."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="password field",
+            value=None,
+        )
+        credentials = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
+
+        result = apply_credentials(step, credentials, flow_kind=FlowKind.HAPPY_PATH)
+        assert result == "${AIVAR_PASSWORD}"
+
+    def test_happy_path_username_field(self):
+        """Test that a HAPPY_PATH flow's username field gets valid username placeholder."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
+
+        result = apply_credentials(step, credentials, flow_kind=FlowKind.HAPPY_PATH)
+        assert result == "${AIVAR_USERNAME}"
+
+    def test_email_field_gets_username(self):
+        """Test that email fields get the username credential."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="email address",
+            value=None,
+        )
+        credentials = {"username": "user@example.com", "password": "pass"}
+
+        result = apply_credentials(step, credentials)
+        assert result == "user@example.com"
+
+    def test_login_field_gets_username(self):
+        """Test that login-named fields get the username credential."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="login field",
+            value=None,
+        )
+        credentials = {"username": "testuser", "password": "testpass"}
+
+        result = apply_credentials(step, credentials)
+        assert result == "testuser"
+
+    # Backwards compatibility: calling without flow_kind/flow_name
+    def test_backwards_compatibility_no_flow_kind(self):
+        """Test that apply_credentials works with only step and credentials (backwards compatibility)."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "testuser", "password": "testpass"}
+
+        result = apply_credentials(step, credentials)
+        assert result == "testuser"
+
+    def test_backwards_compatibility_password(self):
+        """Test password field without flow_kind (backwards compatibility)."""
+        step = PlannedStep(
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="password field",
+            value=None,
+        )
+        credentials = {"username": "testuser", "password": "testpass"}
+
+        result = apply_credentials(step, credentials)
+        assert result == "testpass"
+
+    # Test with Step type (not just PlannedStep) for compatibility
+    def test_works_with_step_type(self):
+        """Test that apply_credentials works with Step type as well as PlannedStep."""
+        step = Step(
+            id="s1",
+            kind=StepKind.ACTION,
+            verb="fill",
+            target="username field",
+            value=None,
+        )
+        credentials = {"username": "testuser", "password": "testpass"}
+
+        result = apply_credentials(step, credentials)
+        assert result == "testuser"
+
+    # Test that placeholders are NOT resolved (critical security test)
+    def test_returned_values_are_placeholders_not_resolved(self):
+        """Test that returned values contain placeholders, never resolved secrets."""
+        # Set an env var to prove it's not being resolved
+        os.environ["AIVAR_INVALID_PASSWORD"] = "zzz"
+
+        try:
+            step = PlannedStep(
+                kind=StepKind.ACTION,
+                verb="fill",
+                target="password field",
+                value=None,
+            )
+            credentials = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
+
+            result = apply_credentials(step, credentials, flow_kind=FlowKind.NEGATIVE)
+
+            # Should contain the placeholder syntax, not the resolved value
+            assert "${" in result
+            assert "zzz" not in result
+            assert result == "${AIVAR_INVALID_PASSWORD:-wrong_password_123}"
+        finally:
+            os.environ.pop("AIVAR_INVALID_PASSWORD", None)
+
+    # Original test cases (preserved for compatibility)
     def test_applies_username_to_username_field(self):
         """Test that username is applied to username fields."""
         step = PlannedStep(

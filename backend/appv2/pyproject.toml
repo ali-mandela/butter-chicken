@@ -5,6 +5,8 @@ description = "Self-healing QA agent - deterministic core"
 requires-python = ">=3.11"
 dependencies = [
     "playwright>=1.62.0",
+    "psycopg[binary]>=3.3.5",
+    "streamlit>=1.63.0",
 ]
 
 [dependency-groups]

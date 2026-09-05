@@ -10,6 +10,7 @@ from playwright._impl._errors import TimeoutError as PlaywrightTimeoutError
 
 from aivar.browser import Browser
 from aivar.config import DEFAULTS, Guardrails
+from aivar.contracts import FlowKind
 from aivar.llm import LLMConfig, LLMResponse
 from aivar.models import CompiledTest, Step, StepKind
 from aivar.planner import PlannedStep, plan_steps, retry_plan_steps, PlanValidationError, LLMInvalidJSON
@@ -22,27 +23,67 @@ logger = logging.getLogger("aivar")
 
 DEFAULT_CREDENTIALS = {"username": "${AIVAR_USERNAME}", "password": "${AIVAR_PASSWORD}"}
 
+# Placeholders for invalid/wrong credentials used in negative and error-state flows.
+# These must work with no environment setup and stay overridable via env vars.
+INVALID_CREDENTIALS = {
+    "username": "${AIVAR_INVALID_USERNAME:-not_a_real_user}",
+    "password": "${AIVAR_INVALID_PASSWORD:-wrong_password_123}",
+}
 
-def apply_credentials(step: PlannedStep, credentials: dict[str, str]) -> str | None:
+
+def apply_credentials(
+    step: PlannedStep | Step,
+    credentials: dict[str, str],
+    *,
+    flow_kind: FlowKind | None = None,
+    flow_name: str = "",
+) -> str | None:
     """
-    Apply credentials to a step value.
+    Apply credentials to a step value, aware of the flow kind and intended use.
 
-    If the step verb is 'fill' and value is None/empty:
-    - If target contains 'pass' (case-insensitive), use credentials["password"]
-    - If target contains 'user', 'email', or 'login', use credentials["username"]
-    - Otherwise return the original value
+    This is the single place that decides what a credential field receives. Getting the
+    rules wrong silently converts every negative test into a duplicate happy-path test,
+    so this function is critical to test quality.
+
+    Rules, in order:
+    1. If the step verb is not 'fill', return the value unchanged. Never give a credential to a click.
+    2. If the step already has a non-empty value, return it unchanged.
+    3. Empty-field tests must stay empty. If flow_name (lowercased) contains 'empty', 'blank',
+       'missing', 'no username', 'no password', or 'without', return None so the field is
+       submitted empty. An intentionally blank field IS the test in this case; filling it
+       would destroy the scenario.
+    4. If flow_kind is NEGATIVE or ERROR_STATE, take the value from INVALID_CREDENTIALS
+       instead of credentials. A negative flow that logs in successfully is not a negative flow.
+    5. Otherwise, behave as before: target containing 'pass' → password; containing 'user',
+       'email' or 'login' → username; else return the original value.
 
     This is how secrets reach the test WITHOUT passing through the model.
     """
+    # Rule 1: Non-fill verbs are never given credentials
     if step.verb != "fill":
         return step.value
 
-    if not step.value:
-        target_lower = step.target.lower()
-        if "pass" in target_lower:
-            return credentials.get("password", step.value)
-        elif any(word in target_lower for word in ["user", "email", "login"]):
-            return credentials.get("username", step.value)
+    # Rule 2: Preserve existing literal values
+    if step.value:
+        return step.value
+
+    # Rule 3: Empty-field tests stay empty (regardless of flow kind)
+    flow_name_lower = flow_name.lower()
+    empty_field_indicators = ["empty", "blank", "missing", "no username", "no password", "without"]
+    if any(indicator in flow_name_lower for indicator in empty_field_indicators):
+        return None
+
+    # Rule 4: Negative and error-state flows get invalid credentials
+    creds_to_use = credentials
+    if flow_kind in (FlowKind.NEGATIVE, FlowKind.ERROR_STATE):
+        creds_to_use = INVALID_CREDENTIALS
+
+    # Rule 5: Apply credentials based on target name
+    target_lower = step.target.lower()
+    if "pass" in target_lower:
+        return creds_to_use.get("password", step.value)
+    elif any(word in target_lower for word in ["user", "email", "login"]):
+        return creds_to_use.get("username", step.value)
 
     return step.value
 

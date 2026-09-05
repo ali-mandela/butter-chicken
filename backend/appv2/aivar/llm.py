@@ -39,7 +39,10 @@ class LLMConfig:
     models: tuple[str, ...] = DEFAULT_MODELS
     base_url: str = "https://openrouter.ai/api/v1"
     temperature: float = 0.0
-    max_tokens: int = 1200
+    # A multi-flow plan is the largest thing we ask for: several flows, each
+    # with named steps. 1200 truncated a 4-flow plan mid-JSON, which surfaces
+    # as an unparseable response rather than an obviously short one.
+    max_tokens: int = 4000
     timeout_s: int = 120
     max_retries: int = 3
 

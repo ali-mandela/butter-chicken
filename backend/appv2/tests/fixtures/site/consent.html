@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+    <title>Consent Banner Test</title>
+    <style>
+        .consent-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .consent-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+<h1>Behind the banner</h1>
+<p>This page has a consent overlay that blocks interaction until dismissed.</p>
+<p><a href="index.html">Back to Home</a></p>
+
+<div class="consent-overlay" id="consent-overlay">
+    <div class="consent-content">
+        <h2>Cookie Consent</h2>
+        <p>We use cookies to enhance your experience.</p>
+        <button id="consent-button">Accept all</button>
+    </div>
+</div>
+
+<script>
+    const button = document.getElementById('consent-button');
+    const overlay = document.getElementById('consent-overlay');
+
+    button.addEventListener('click', function() {
+        overlay.style.display = 'none';
+    });
+</script>
+</body>
+</html>

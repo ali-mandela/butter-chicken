@@ -1,80 +1,203 @@
-﻿..........................F........................F.................... [ 87%]
-..........                                                               [100%]
-================================== FAILURES ===================================
-___ TestTier1HeuristicResolution.test_tier1_resolves_uncompiled_action_step ___
+﻿........................................................................ [ 20%]
+........................................................................ [ 40%]
+..................................EEEEEEEEEEEEEEE....................... [ 60%]
+........................................................................ [ 80%]
+.....................................................................    [100%]
+=================================== ERRORS ====================================
+______________ ERROR at setup of test_clean_run_walks_all_stages ______________
 
-self = <tests.test_executor.TestTier1HeuristicResolution object at 0x00000294D31B9890>
-fixture_url = 'file:///B:/projects/aviar-hc/backend/appv2/tests/fixtures/login.html'
-
-    def test_tier1_resolves_uncompiled_action_step(self, fixture_url: str):
-        """ACTION step with selector=None and a heuristic match should pass with source=HEURISTIC."""
-        steps = [
-            Step(
-                id="s1",
-                kind=StepKind.ACTION,
-                verb="fill",
-                target="username",
-                value="test",
-                selector=None,  # Uncompiled, will use Tier 1
-            ),
-            Step(
-                id="s2",
-                kind=StepKind.ACTION,
-                verb="fill",
-                target="password",
-                value="test",
-                selector=Selector(strategy="placeholder", value="Password"),
-            ),
-            Step(
-                id="s3",
-                kind=StepKind.ACTION,
-                verb="click",
-                target="login button",
-                selector=None,  # Uncompiled, will use Tier 1
-            ),
-            Step(
-                id="s4",
-                kind=StepKind.ASSERTION,
-                verb="wait_visible",
-                target="products",
-                selector=Selector(strategy="text", value="Products"),
-            ),
-        ]
-        test = make_test(fixture_url, steps)
-        result = run_test(test, headless=True)
-    
-        # First step should pass with HEURISTIC source
->       assert result.results[0].status == "passed"
-E       AssertionError: assert 'failed' == 'passed'
-E         
-E         - passed
-E         + failed
-
-tests\test_executor.py:336: AssertionError
-________________ TestScoreNode.test_partial_match_scores_less _________________
-
-self = <tests.test_resolve.TestScoreNode object at 0x00000294D3303FD0>
-
-    def test_partial_match_scores_less(self):
-        """Partial token match should score less than 1.0."""
-        node = Node(
-            ref="e0",
-            role="button",
-            name="submit form",
-            tag="button",
-            placeholder=None,
-            testid=None,
-            visible=True,
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
         )
-        # Target "submit page form" has tokens ["submit", "page", "form"]
-        # Node "submit form" has tokens ["submit", "form"]
-        # Matched tokens: "submit", "form" (2/3) → 0.666... * 0.8 = ~0.533
-        score, why = score_node(node, "submit page form")
->       assert 0.4 <= score <= 0.7
-E       assert 1.0 <= 0.7
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
 
-tests\test_resolve.py:177: AssertionError
+tests\test_orchestrator.py:41: TypeError
+______________ ERROR at setup of test_replan_sends_back_to_plan _______________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+____________ ERROR at setup of test_replan_twice_exhausts_replans _____________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+___________________ ERROR at setup of test_mode_derivation ____________________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+_______________ ERROR at setup of test_exceeded_cost_escalates ________________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+________ ERROR at setup of test_no_flows_survive_validation_escalates _________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+_____________ ERROR at setup of test_handler_exception_escalates ______________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+_______________ ERROR at setup of test_ledger_matches_decisions _______________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+______ ERROR at setup of test_high_unresolved_steps_trigger_regeneration ______
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+_______________ ERROR at setup of test_dropped_flow_records_gap _______________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+___________ ERROR at setup of test_exploration_zero_pages_escalates ___________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+__________________ ERROR at setup of test_over_budget_check ___________________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+______________ ERROR at setup of test_run_pipeline_returns_tuple ______________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+___________ ERROR at setup of test_record_decision_logs_and_appends ___________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
+______________ ERROR at setup of test_state_elapsed_s_increases _______________
+
+    @pytest.fixture
+    def llm_config():
+        """Minimal LLM config for testing."""
+>       return LLMConfig(
+            api_key="test-key",
+            model="claude-3-5-sonnet-20241022",
+        )
+E       TypeError: LLMConfig.__init__() got an unexpected keyword argument 'model'
+
+tests\test_orchestrator.py:41: TypeError
 =========================== short test summary info ===========================
-FAILED tests/test_executor.py::TestTier1HeuristicResolution::test_tier1_resolves_uncompiled_action_step
-FAILED tests/test_resolve.py::TestScoreNode::test_partial_match_scores_less
-2 failed, 80 passed in 33.97s
+ERROR tests/test_orchestrator.py::test_clean_run_walks_all_stages - TypeError...
+ERROR tests/test_orchestrator.py::test_replan_sends_back_to_plan - TypeError:...
+ERROR tests/test_orchestrator.py::test_replan_twice_exhausts_replans - TypeEr...
+ERROR tests/test_orchestrator.py::test_mode_derivation - TypeError: LLMConfig...
+ERROR tests/test_orchestrator.py::test_exceeded_cost_escalates - TypeError: L...
+ERROR tests/test_orchestrator.py::test_no_flows_survive_validation_escalates
+ERROR tests/test_orchestrator.py::test_handler_exception_escalates - TypeErro...
+ERROR tests/test_orchestrator.py::test_ledger_matches_decisions - TypeError: ...
+ERROR tests/test_orchestrator.py::test_high_unresolved_steps_trigger_regeneration
+ERROR tests/test_orchestrator.py::test_dropped_flow_records_gap - TypeError: ...
+ERROR tests/test_orchestrator.py::test_exploration_zero_pages_escalates - Typ...
+ERROR tests/test_orchestrator.py::test_over_budget_check - TypeError: LLMConf...
+ERROR tests/test_orchestrator.py::test_run_pipeline_returns_tuple - TypeError...
+ERROR tests/test_orchestrator.py::test_record_decision_logs_and_appends - Typ...
+ERROR tests/test_orchestrator.py::test_state_elapsed_s_increases - TypeError:...
+342 passed, 3 deselected, 15 errors in 95.08s (0:01:35)

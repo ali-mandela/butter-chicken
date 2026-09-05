@@ -39,6 +39,56 @@ uv run python -m aivar.cli compile "Log in and verify the products page loads" -
 uv run python -m aivar.cli run examples/generated.json
 ```
 
+### Explore an application
+
+The `explore` command discovers what an application contains: its pages, forms, links, and interactive controls. Exploration is **deterministic and costs nothing** — no LLM is involved.
+
+```bash
+uv run python -m aivar.cli explore --url https://www.saucedemo.com
+```
+
+With login credentials (optional):
+
+```bash
+uv run python -m aivar.cli explore \
+  --url https://www.saucedemo.com \
+  --username standard_user \
+  --password secret_sauce
+```
+
+With output to JSON:
+
+```bash
+uv run python -m aivar.cli explore \
+  --url https://www.saucedemo.com \
+  --out exploration.json \
+  --max-pages 10 \
+  --max-depth 3
+```
+
+The output is a compact text digest showing:
+- Entry URL and authentication status
+- Discovered pages (title, headings, forms, controls)
+- Same-origin links only (external links filtered)
+- Logout links skipped (to preserve session during exploration)
+
+Programmatically:
+
+```python
+from aivar.explorer import explore
+
+report = explore(
+    url="https://www.saucedemo.com",
+    username="standard_user",
+    password="secret_sauce",
+    max_pages=8,
+    max_depth=2,
+)
+print(f"Pages discovered: {report.page_count}")
+print(f"Authenticated: {report.authenticated}")
+print(report.summarize())
+```
+
 ## Run a test (programmatic)
 
 Use `load_test` to read a compiled test and `run_test` to execute it:

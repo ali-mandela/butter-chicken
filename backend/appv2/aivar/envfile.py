@@ -22,7 +22,10 @@ def load_env_file(path: str | Path) -> dict[str, str]:
     if not path.exists():
         return result
 
-    with open(path, "r", encoding="utf-8") as f:
+    # utf-8-sig, not utf-8: an editor or PowerShell writing this file on Windows
+    # prepends a byte-order mark, which silently turns the first key into
+    # "﻿OPENROUTER_API_KEY" and makes it look unset with no visible cause.
+    with open(path, "r", encoding="utf-8-sig") as f:
         for line in f:
             # Remove trailing whitespace (newline, spaces, etc.)
             line = line.rstrip()

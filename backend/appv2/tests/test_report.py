@@ -3,6 +3,7 @@ import pytest
 from pathlib import Path
 from datetime import datetime
 
+from aivar.contracts import Decision, Gap, Stage, TestPlan, TriageResult, TriageVerdict, FlowKind, Flow
 from aivar.models import (
     CompiledTest,
     Finding,
@@ -16,7 +17,15 @@ from aivar.models import (
     StepResult,
     Source,
 )
-from aivar.report import render_text, render_json, write_report
+from aivar.report import (
+    render_text,
+    render_json,
+    write_report,
+    PipelineReport,
+    render_pipeline_text,
+    render_pipeline_html,
+    write_pipeline_report,
+)
 
 
 @pytest.fixture
@@ -562,3 +571,694 @@ class TestRunResultBackwardsCompatibility:
         )
         assert len(run_result.findings) == 1
         assert len(run_result.heal_proposals) == 1
+
+
+# --------------------------------------------------------------------------
+# PipelineReport tests
+# --------------------------------------------------------------------------
+
+
+class TestPipelineReportProperties:
+    """Test PipelineReport property computations."""
+
+    def test_flows_total(self):
+        """Test flows_total property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="failed", results=[]
+                ),
+            },
+        )
+        assert report.flows_total == 2
+
+    def test_flows_passed(self):
+        """Test flows_passed property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="failed", results=[]
+                ),
+                "flow3": RunResult(
+                    test_id="test3", status="passed", results=[]
+                ),
+            },
+        )
+        assert report.flows_passed == 2
+
+    def test_flows_failed(self):
+        """Test flows_failed property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="failed", results=[]
+                ),
+                "flow3": RunResult(
+                    test_id="test3", status="passed", results=[]
+                ),
+            },
+        )
+        assert report.flows_failed == 1
+
+    def test_steps_total(self):
+        """Test steps_total property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1",
+                    status="passed",
+                    results=[
+                        StepResult(
+                            step_id="s1", status="passed", source=Source.CACHE, duration_ms=100.0
+                        ),
+                        StepResult(
+                            step_id="s2", status="passed", source=Source.CACHE, duration_ms=100.0
+                        ),
+                    ],
+                ),
+                "flow2": RunResult(
+                    test_id="test2",
+                    status="passed",
+                    results=[
+                        StepResult(
+                            step_id="s3", status="passed", source=Source.CACHE, duration_ms=100.0
+                        ),
+                    ],
+                ),
+            },
+        )
+        assert report.steps_total == 3
+
+    def test_steps_passed(self):
+        """Test steps_passed property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1",
+                    status="passed",
+                    results=[
+                        StepResult(
+                            step_id="s1", status="passed", source=Source.CACHE, duration_ms=100.0
+                        ),
+                        StepResult(
+                            step_id="s2", status="failed", source=Source.CACHE, duration_ms=100.0
+                        ),
+                    ],
+                ),
+                "flow2": RunResult(
+                    test_id="test2",
+                    status="passed",
+                    results=[
+                        StepResult(
+                            step_id="s3", status="passed", source=Source.CACHE, duration_ms=100.0
+                        ),
+                    ],
+                ),
+            },
+        )
+        assert report.steps_passed == 2
+
+    def test_heals_applied(self):
+        """Test heals_applied property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[], heals_used=2
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="passed", results=[], heals_used=3
+                ),
+            },
+        )
+        assert report.heals_applied == 5
+
+    def test_defects_found(self):
+        """Test defects_found property."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            triage=[
+                TriageResult(
+                    step_id="s1",
+                    verdict=TriageVerdict.APP_DEFECT,
+                    confidence=0.95,
+                    reasoning="App crashed",
+                ),
+                TriageResult(
+                    step_id="s2",
+                    verdict=TriageVerdict.SCRIPT_ISSUE,
+                    confidence=0.90,
+                    reasoning="Locator changed",
+                ),
+                TriageResult(
+                    step_id="s3",
+                    verdict=TriageVerdict.APP_DEFECT,
+                    confidence=0.85,
+                    reasoning="Wrong validation",
+                ),
+            ],
+        )
+        assert report.defects_found == 2
+
+    def test_untested_risk_sorts_by_severity(self):
+        """Test untested_risk property sorts critical-first."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            gaps=[
+                Gap(
+                    kind="untested_form",
+                    description="Login page not tested",
+                    evidence="Form found but no flows",
+                    severity=Severity.MINOR,
+                ),
+                Gap(
+                    kind="missing_error_state",
+                    description="Network error handling",
+                    evidence="No error page flows",
+                    severity=Severity.CRITICAL,
+                ),
+                Gap(
+                    kind="untested_page",
+                    description="Checkout flow",
+                    evidence="Page discovered but no test",
+                    severity=Severity.SERIOUS,
+                ),
+            ],
+        )
+        risk = report.untested_risk
+        # Check that critical comes first
+        assert risk[0] == ("Network error handling", "critical")
+        assert risk[1] == ("Checkout flow", "serious")
+        assert risk[2] == ("Login page not tested", "minor")
+
+    def test_summary_line_all_passing_no_extras(self):
+        """Test summary_line with all flows passing and no extras."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="passed", results=[]
+                ),
+            },
+            cost_usd=0.0021,
+            duration_s=214.0,
+        )
+        assert report.summary_line == "2/2 flows passed, $0.0021, 214s"
+
+    def test_summary_line_with_heals(self):
+        """Test summary_line with heals applied."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[], heals_used=2
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="passed", results=[], heals_used=1
+                ),
+            },
+            cost_usd=0.0021,
+        )
+        assert "3 heals applied" in report.summary_line
+
+    def test_summary_line_with_defects(self):
+        """Test summary_line with defects found."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+            triage=[
+                TriageResult(
+                    step_id="s1",
+                    verdict=TriageVerdict.APP_DEFECT,
+                    confidence=0.95,
+                    reasoning="Bug found",
+                ),
+            ],
+            cost_usd=0.0021,
+        )
+        assert "1 defect found" in report.summary_line
+
+    def test_summary_line_with_gaps(self):
+        """Test summary_line with gaps remaining."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+            gaps=[
+                Gap(
+                    kind="untested_form",
+                    description="Login page",
+                    evidence="Form found",
+                    severity=Severity.SERIOUS,
+                ),
+                Gap(
+                    kind="untested_page",
+                    description="Checkout",
+                    evidence="Page found",
+                    severity=Severity.MODERATE,
+                ),
+            ],
+            cost_usd=0.0021,
+        )
+        assert "2 gaps remaining" in report.summary_line
+
+    def test_summary_line_pluralisation(self):
+        """Test summary_line pluralisation is correct."""
+        # 1 heal
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[], heals_used=1
+                ),
+            },
+            cost_usd=0.0021,
+        )
+        assert "1 heal applied" in report.summary_line
+
+        # 1 defect
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+            triage=[
+                TriageResult(
+                    step_id="s1",
+                    verdict=TriageVerdict.APP_DEFECT,
+                    confidence=0.95,
+                    reasoning="Bug",
+                ),
+            ],
+            cost_usd=0.0021,
+        )
+        assert "1 defect found" in report.summary_line
+
+        # 1 gap
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+            gaps=[
+                Gap(
+                    kind="untested_form",
+                    description="Login",
+                    evidence="Form found",
+                    severity=Severity.SERIOUS,
+                ),
+            ],
+            cost_usd=0.0021,
+        )
+        assert "1 gap remaining" in report.summary_line
+
+
+class TestRenderPipelineText:
+    """Test render_pipeline_text function."""
+
+    def test_render_includes_every_flow_name(self):
+        """Test that render_pipeline_text includes every flow name."""
+        plan = TestPlan(
+            id="plan1",
+            mode="sweep",
+            flows=[
+                Flow(
+                    id="flow1",
+                    name="Happy path login",
+                    description="Test successful login",
+                    kind=FlowKind.HAPPY_PATH,
+                    steps=[],
+                ),
+                Flow(
+                    id="flow2",
+                    name="Invalid password",
+                    description="Test invalid password",
+                    kind=FlowKind.NEGATIVE,
+                    steps=[],
+                ),
+            ],
+        )
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            plan=plan,
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="failed", results=[]
+                ),
+            },
+        )
+        text = render_pipeline_text(report)
+        assert "Happy path login" in text
+        assert "Invalid password" in text
+
+    def test_render_omits_gaps_section_when_empty(self):
+        """Test that gaps section is omitted when there are none."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+        )
+        text = render_pipeline_text(report)
+        assert "COVERAGE GAPS REMAINING:" not in text
+
+    def test_render_includes_gaps_section_when_present(self):
+        """Test that gaps section is included when gaps exist."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            gaps=[
+                Gap(
+                    kind="untested_form",
+                    description="Login page",
+                    evidence="Form found",
+                    severity=Severity.SERIOUS,
+                ),
+            ],
+        )
+        text = render_pipeline_text(report)
+        assert "COVERAGE GAPS REMAINING:" in text
+        assert "Login page" in text
+
+    def test_render_includes_escalated_block(self):
+        """Test that ESCALATED block is included when escalated."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            escalated=True,
+            escalation_reason="Critical defects found",
+        )
+        text = render_pipeline_text(report)
+        assert "ESCALATED:" in text
+        assert "Critical defects found" in text
+
+    def test_render_omits_escalated_block_when_not_escalated(self):
+        """Test that ESCALATED block is not included when not escalated."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            escalated=False,
+        )
+        text = render_pipeline_text(report)
+        assert "ESCALATED:" not in text
+
+
+class TestRenderPipelineHtml:
+    """Test render_pipeline_html function."""
+
+    def test_render_starts_with_doctype(self):
+        """Test that HTML output starts with <!doctype html."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+        )
+        html = render_pipeline_html(report)
+        assert html.startswith("<!doctype html")
+
+    def test_render_contains_prefers_color_scheme(self):
+        """Test that HTML contains prefers-color-scheme media query."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+        )
+        html = render_pipeline_html(report)
+        assert "prefers-color-scheme" in html
+
+    def test_render_includes_every_flow_name(self):
+        """Test that HTML includes every flow name."""
+        plan = TestPlan(
+            id="plan1",
+            mode="sweep",
+            flows=[
+                Flow(
+                    id="flow1",
+                    name="Happy path login",
+                    description="Test successful login",
+                    kind=FlowKind.HAPPY_PATH,
+                    steps=[],
+                ),
+                Flow(
+                    id="flow2",
+                    name="Invalid password",
+                    description="Test invalid password",
+                    kind=FlowKind.NEGATIVE,
+                    steps=[],
+                ),
+            ],
+        )
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            plan=plan,
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+                "flow2": RunResult(
+                    test_id="test2", status="failed", results=[]
+                ),
+            },
+        )
+        html = render_pipeline_html(report)
+        assert "Happy path login" in html
+        assert "Invalid password" in html
+
+    def test_html_escapes_flow_names(self):
+        """Test that flow names are HTML-escaped."""
+        plan = TestPlan(
+            id="plan1",
+            mode="sweep",
+            flows=[
+                Flow(
+                    id="flow1",
+                    name="<script>alert(1)</script>",
+                    description="Test",
+                    kind=FlowKind.HAPPY_PATH,
+                    steps=[],
+                ),
+            ],
+        )
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            plan=plan,
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+        )
+        html = render_pipeline_html(report)
+        # The raw <script> tag should NOT appear in output
+        assert "<script>alert(1)</script>" not in html
+        # But the escaped version should
+        assert "&lt;script&gt;" in html or "script" in html
+
+    def test_render_omits_gaps_section_when_empty(self):
+        """Test that gaps section is omitted when empty."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+        )
+        html = render_pipeline_html(report)
+        # Section header should not appear
+        assert "Coverage Gaps Remaining" not in html
+
+    def test_render_empty_report_does_not_raise(self):
+        """Test that an empty report renders without raising."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+        )
+        html = render_pipeline_html(report)
+        assert html.startswith("<!doctype html")
+
+
+class TestWritePipelineReport:
+    """Test write_pipeline_report function."""
+
+    def test_write_creates_all_three_files(self, tmp_path):
+        """Test that write_pipeline_report creates JSON, TXT, and HTML files."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+        )
+        result = write_pipeline_report(report, out_dir=tmp_path)
+        assert "json" in result
+        assert "txt" in result
+        assert "html" in result
+        assert result["json"].exists()
+        assert result["txt"].exists()
+        assert result["html"].exists()
+
+    def test_json_round_trips(self, tmp_path):
+        """Test that JSON file can be loaded back."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+            cost_usd=0.0021,
+        )
+        result = write_pipeline_report(report, out_dir=tmp_path)
+        with open(result["json"]) as f:
+            loaded = json.load(f)
+        assert loaded["run_id"] == "run1"
+        assert loaded["url"] == "https://example.com"
+        assert loaded["cost_usd"] == 0.0021
+
+    def test_write_creates_nested_directories(self, tmp_path):
+        """Test that write_pipeline_report creates nested directories."""
+        nested_dir = tmp_path / "a" / "b" / "c"
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+        )
+        result = write_pipeline_report(report, out_dir=nested_dir)
+        assert result["json"].exists()
+
+    def test_filenames_use_run_id(self, tmp_path):
+        """Test that filenames use the run_id."""
+        report = PipelineReport(
+            run_id="my_run_123",
+            url="https://example.com",
+        )
+        result = write_pipeline_report(report, out_dir=tmp_path)
+        assert "my_run_123" in result["json"].name
+        assert "my_run_123" in result["txt"].name
+        assert "my_run_123" in result["html"].name
+
+
+class TestPipelineReportToDict:
+    """Test PipelineReport.to_dict() method."""
+
+    def test_to_dict_includes_all_fields(self):
+        """Test that to_dict includes all fields."""
+        decision = Decision.now(
+            stage=Stage.EXECUTE,
+            verdict="passed",
+            reason="All flows passed",
+            next_stage=Stage.REPORT,
+        )
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+            mode="sweep",
+            intent="Test everything",
+            flow_results={
+                "flow1": RunResult(
+                    test_id="test1", status="passed", results=[]
+                ),
+            },
+            triage=[
+                TriageResult(
+                    step_id="s1",
+                    verdict=TriageVerdict.APP_DEFECT,
+                    confidence=0.95,
+                    reasoning="Bug",
+                ),
+            ],
+            decisions=[decision],
+            escalated=True,
+            escalation_reason="Test reason",
+            cost_usd=0.0021,
+            duration_s=214.0,
+        )
+        d = report.to_dict()
+        assert d["run_id"] == "run1"
+        assert d["url"] == "https://example.com"
+        assert d["mode"] == "sweep"
+        assert d["intent"] == "Test everything"
+        assert "flow1" in d["flow_results"]
+        assert len(d["triage"]) == 1
+        assert len(d["decisions"]) == 1
+        assert d["escalated"] is True
+        assert d["cost_usd"] == 0.0021
+        assert d["duration_s"] == 214.0
+
+
+class TestEmptyPipelineReport:
+    """Test that empty pipeline reports render without errors."""
+
+    def test_empty_report_text_renders(self):
+        """Test that an empty report renders to text without error."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+        )
+        text = render_pipeline_text(report)
+        assert "Run ID: run1" in text
+        assert "URL: https://example.com" in text
+
+    def test_empty_report_html_renders(self):
+        """Test that an empty report renders to HTML without error."""
+        report = PipelineReport(
+            run_id="run1",
+            url="https://example.com",
+        )
+        html = render_pipeline_html(report)
+        assert html.startswith("<!doctype html")
+        assert "run1" in html

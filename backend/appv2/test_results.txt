@@ -1,0 +1,15 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-9.1.1, pluggy-1.6.0 -- B:\projects\aviar-hc\backend\appv2\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: B:\projects\aviar-hc\backend\appv2
+configfile: pyproject.toml
+plugins: anyio-4.15.0
+collecting ... collected 11 items / 6 deselected / 5 selected
+
+tests/test_store.py::TestGetDsn::test_get_dsn_raises_when_unset PASSED   [ 20%]
+tests/test_store.py::TestHealth::test_health_with_bad_dsn_no_password_leak PASSED [ 40%]
+tests/test_store.py::TestHealth::test_health_never_raises PASSED         [ 60%]
+tests/test_store.py::TestSaveRunSafe::test_save_run_safe_returns_none_on_failure PASSED [ 80%]
+tests/test_store.py::TestRunSummary::test_run_summary_round_trip PASSED  [100%]
+
+======================= 5 passed, 6 deselected in 0.35s =======================

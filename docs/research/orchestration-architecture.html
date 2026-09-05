@@ -1,0 +1,487 @@
+<title>The Orchestration Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#F2F5F4; --surface:#FBFCFC; --surface-2:#E7EDEC;
+  --ink:#111918; --ink-2:#3D4A48; --muted:#667472; --rule:#D3DCDA;
+  --accent:#1B5E63; --accent-soft:#DBEAEA;
+  --det:#2F6B3D; --det-soft:#E0ECE2;
+  --ai:#8A6516; --ai-soft:#F1E8D4;
+  --stop:#8C2F2F; --stop-soft:#F1DFDF;
+  --display:"Newsreader",Georgia,serif;
+  --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1413; --surface:#151D1C; --surface-2:#1D2726;
+    --ink:#E4EAE9; --ink-2:#B4C0BE; --muted:#849693; --rule:#2B3736;
+    --accent:#5FB3AC; --accent-soft:#16302E;
+    --det:#79BE87; --det-soft:#152616;
+    --ai:#D3A95B; --ai-soft:#2A2314;
+    --stop:#D98B8B; --stop-soft:#2B1919;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1413; --surface:#151D1C; --surface-2:#1D2726;
+  --ink:#E4EAE9; --ink-2:#B4C0BE; --muted:#849693; --rule:#2B3736;
+  --accent:#5FB3AC; --accent-soft:#16302E;
+  --det:#79BE87; --det-soft:#152616;
+  --ai:#D3A95B; --ai-soft:#2A2314;
+  --stop:#D98B8B; --stop-soft:#2B1919;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);font-weight:500;text-wrap:balance;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+.mast{border-bottom:1px solid var(--rule);padding:52px 0 38px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+.mast h1{font-size:clamp(36px,5.6vw,58px);line-height:1.05;letter-spacing:-.02em;max-width:15ch}
+.lede{font-family:var(--display);font-size:clamp(18px,2.2vw,22px);line-height:1.5;color:var(--ink-2);max-width:62ch;margin:18px 0 0}
+.lede b{color:var(--ink);font-weight:500}
+.quote-src{margin:22px 0 0;padding:14px 18px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 3px 3px 0}
+.quote-src p{margin:0;font-family:var(--display);font-style:italic;font-size:16.5px;line-height:1.5;color:var(--ink);max-width:none}
+.quote-src cite{display:block;margin-top:7px;font-style:normal;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--muted)}
+
+.legend{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;margin:32px 0 0;overflow:hidden}
+@media(max-width:780px){.legend{grid-template-columns:repeat(2,1fr)}}
+.lg{background:var(--surface);padding:14px 16px}
+.lg b{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:600}
+.lg b::before{content:"";width:11px;height:11px;border-radius:2px;border:2px solid currentColor;flex:none}
+.lg span{display:block;margin-top:6px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.lg-det b{color:var(--det)} .lg-ai b{color:var(--ai)} .lg-dec b{color:var(--accent)} .lg-stop b{color:var(--stop)}
+
+main{padding:8px 0 90px}
+.plate{padding:52px 0 0;border-top:1px solid var(--rule);margin-top:52px}
+.plate:first-child{border-top:none;margin-top:0}
+.pnum{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+.plate>h2{font-size:clamp(24px,3.2vw,31px);letter-spacing:-.015em;line-height:1.2}
+.plate>.sub{font-size:16.5px;color:var(--ink-2);max-width:70ch;margin:12px 0 0}
+h3{font-size:19px;margin:34px 0 10px;letter-spacing:-.01em}
+p{margin:0 0 15px;max-width:72ch}
+main ul,main ol{max-width:72ch;padding-left:20px;margin:0 0 16px}
+li{margin-bottom:8px}
+code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:1.5px 5px;border-radius:2px}
+
+figure{margin:30px 0 26px;background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:26px 24px 18px;overflow-x:auto}
+figure svg{display:block;width:100%;max-width:100%;height:auto;min-width:560px;color:var(--ink)}
+figcaption{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);font-size:13.5px;line-height:1.55;color:var(--muted);max-width:82ch}
+figcaption b{color:var(--ink-2);font-weight:600}
+
+.bx{fill:var(--surface-2);stroke:currentColor;stroke-width:1.5}
+.bx-det{fill:var(--det-soft);stroke:var(--det);stroke-width:1.5}
+.bx-ai{fill:var(--ai-soft);stroke:var(--ai);stroke-width:1.5}
+.bx-dec{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.5}
+.bx-stop{fill:var(--stop-soft);stroke:var(--stop);stroke-width:2}
+.ln{stroke:currentColor;stroke-width:1.4;fill:none}
+.ln-loop{stroke:var(--accent);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+.ln-stop{stroke:var(--stop);stroke-width:1.6;fill:none}
+text{font-family:var(--mono);fill:currentColor}
+.t{font-size:12.5px;font-weight:500}
+.t-sm{font-size:10.5px;fill:var(--muted)}
+.t-lb{font-size:10px;fill:var(--accent);font-style:italic}
+.t-lbs{font-size:10px;fill:var(--stop);font-style:italic}
+.t-dec{font-size:12.5px;font-weight:600;fill:var(--accent)}
+.t-stop{font-size:12px;font-weight:600;fill:var(--stop)}
+.t-hd{font-size:10px;fill:var(--muted);letter-spacing:.1em}
+
+.scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--surface);margin:0 0 22px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:13.5px}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.5}
+thead th{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td code{background:none;padding:0;color:var(--accent);font-weight:500}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ok{color:var(--det);font-weight:600}
+.no{color:var(--stop);font-weight:600}
+.part{color:var(--ai);font-weight:600}
+.rid{font-family:var(--mono);font-weight:600;color:var(--accent);white-space:nowrap}
+
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:16px 20px;border-radius:0 3px 3px 0;margin:0 0 22px}
+.note p{margin:0;font-size:14.5px;color:var(--ink-2);max-width:none}
+.note b{color:var(--accent)}
+.warn{border-left:3px solid var(--stop);background:var(--stop-soft);padding:16px 20px;border-radius:0 3px 3px 0;margin:0 0 22px}
+.warn p{margin:0;font-size:14.5px;color:var(--ink-2);max-width:none}
+.warn b{color:var(--stop)}
+
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin:0 0 22px}
+pre .c{color:var(--muted)}
+pre .k{color:var(--accent);font-weight:600}
+
+footer{border-top:1px solid var(--rule);padding:24px 0 56px;font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <p class="eyebrow">Autonomous Test Orchestration Agent · Architecture rev 3</p>
+    <h1>The Orchestration Loop</h1>
+    <p class="lede">Playwright already ships a Planner, a Generator and a Healer. <b>The human is the glue between them.</b> This architecture is about removing the glue — the decisions of when to plan, when to re-plan, when to generate, when to heal, and when to stop and ask.</p>
+    <div class="quote-src">
+      <p>"I've been using the Playwright agents, but still I am the one giving them context again and again. It is a lot of manual work."</p>
+      <cite>Problem statement briefing</cite>
+    </div>
+    <div class="legend">
+      <div class="lg lg-det"><b>Deterministic</b><span>No model call. Free and repeatable.</span></div>
+      <div class="lg lg-ai"><b>Model call</b><span>Costs money and seconds. Budgeted.</span></div>
+      <div class="lg lg-dec"><b>Decision</b><span>Where the orchestrator earns its name.</span></div>
+      <div class="lg lg-stop"><b>Escalate</b><span>Stop acting. Hand back to a human.</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="plate">
+  <p class="pnum">Plate 01 · Input</p>
+  <h2>One required input, three modes</h2>
+  <p class="sub">A URL is the only thing the agent needs. Credentials are used when supplied. Everything else narrows the job — and their <em>absence</em> is itself an instruction.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Mode</th><th>Given</th><th>What the suite aims at</th><th>A "gap" means</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>1 · Sweep</b><br><span class="num">the default</span></td>
+        <td><code>--url</code> (+ credentials if available)</td>
+        <td><b>Full coverage.</b> Every page, form and error state the explorer found deserves a scenario</td>
+        <td>Anything discovered but untested</td>
+      </tr>
+      <tr>
+        <td><b>2 · Focused</b></td>
+        <td>+ <code>--intent "focus on checkout and auth"</code></td>
+        <td>Depth inside the stated scope</td>
+        <td>Something <em>inside that scope</em> left untested. Flows outside it are <b>deliberately untested</b>, reported as such — never silently dropped</td>
+      </tr>
+      <tr>
+        <td><b>3 · Spec-led</b></td>
+        <td>+ <code>--prd spec.md</code></td>
+        <td>The requirements the document states</td>
+        <td>A stated requirement with no scenario against it</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="note"><p><b>The absence of a prompt is not the absence of instructions.</b> It means "cover everything", and that is the hardest mode, not the easiest — it is also the one a judge will run first. Mode 1 is therefore the default the whole system is tuned for, and the coverage gate does the most work there because nothing else has narrowed the target.</p></div>
+
+  <p>Because the target changes per mode, the final report always states which mode it ran in. "3 gaps remaining" is meaningless otherwise.</p>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 02 · The loop</p>
+  <h2>One URL in, a test suite and a quality report out</h2>
+  <p class="sub">Nine stages and four decision points. The stages are the easy part — every one already exists in some tool. The decision points are the product.</p>
+
+  <figure>
+    <svg viewBox="0 0 980 1010" role="img" aria-label="An orchestration loop: input, explore, plan, a coverage decision that can loop back to planning, generate, a validation decision that can loop back to generation, execute, a triage decision that routes genuine defects to the report and script failures to the healer, and a heal step that loops back to execution. Every decision can also escalate to a human, and all escalations feed the final report.">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="currentColor"/></marker>
+        <marker id="arl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="var(--accent)"/></marker>
+        <marker id="ars" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="var(--stop)"/></marker>
+      </defs>
+
+      <text class="t-hd" x="150" y="14">RE-ENTRY (bounded)</text>
+      <text class="t-hd" x="700" y="14">ESCALATION</text>
+
+      <rect class="bx" x="330" y="24" width="300" height="62" rx="3"/>
+      <text class="t" x="480" y="46" text-anchor="middle">INPUT</text>
+      <text class="t-sm" x="480" y="63" text-anchor="middle">url  ·  credentials if available</text>
+      <text class="t-sm" x="480" y="77" text-anchor="middle">optional: intent, PRD</text>
+      <line class="ln" x1="480" y1="86" x2="480" y2="110" marker-end="url(#ar)"/>
+
+      <rect class="bx-det" x="330" y="114" width="300" height="58" rx="3"/>
+      <text class="t" x="480" y="137" text-anchor="middle">1 · EXPLORE</text>
+      <text class="t-sm" x="480" y="154" text-anchor="middle">crawl, log in, map forms and flows</text>
+      <text class="t-sm" x="480" y="167" text-anchor="middle">deterministic · $0</text>
+      <line class="ln" x1="480" y1="172" x2="480" y2="196" marker-end="url(#ar)"/>
+
+      <rect class="bx-ai" x="330" y="200" width="300" height="58" rx="3"/>
+      <text class="t" x="480" y="223" text-anchor="middle">2 · PLAN</text>
+      <text class="t-sm" x="480" y="240" text-anchor="middle">digest to many flows, not just happy paths</text>
+      <text class="t-sm" x="480" y="253" text-anchor="middle">1 call</text>
+      <line class="ln" x1="480" y1="258" x2="480" y2="282" marker-end="url(#ar)"/>
+
+      <rect class="bx-dec" x="330" y="286" width="300" height="72" rx="3"/>
+      <text class="t-dec" x="480" y="309" text-anchor="middle">3 · COVERAGE GATE</text>
+      <text class="t-sm" x="480" y="326" text-anchor="middle">missing flows? edge cases? error states?</text>
+      <text class="t-sm" x="480" y="342" text-anchor="middle">target depends on the input mode</text>
+
+      <path class="ln-loop" d="M330 322 H196 V229 H326" marker-end="url(#arl)"/>
+      <text class="t-lb" x="118" y="272">gaps named</text>
+      <text class="t-lb" x="118" y="286">re-plan (max 2)</text>
+
+      <path class="ln-stop" d="M630 322 H744" marker-end="url(#ars)"/>
+      <text class="t-lbs" x="640" y="314">still thin</text>
+
+      <line class="ln" x1="480" y1="358" x2="480" y2="382" marker-end="url(#ar)"/>
+      <text class="t-lb" x="490" y="374">accepted</text>
+
+      <rect class="bx-ai" x="330" y="386" width="300" height="58" rx="3"/>
+      <text class="t" x="480" y="409" text-anchor="middle">4 · GENERATE</text>
+      <text class="t-sm" x="480" y="426" text-anchor="middle">dry run on the live app, compile selectors</text>
+      <text class="t-sm" x="480" y="439" text-anchor="middle">emit pytest files</text>
+      <line class="ln" x1="480" y1="444" x2="480" y2="468" marker-end="url(#ar)"/>
+
+      <rect class="bx-dec" x="330" y="472" width="300" height="72" rx="3"/>
+      <text class="t-dec" x="480" y="495" text-anchor="middle">5 · VALIDATION GATE</text>
+      <text class="t-sm" x="480" y="512" text-anchor="middle">every step resolved against the real DOM?</text>
+      <text class="t-sm" x="480" y="528" text-anchor="middle">does the emitted file actually import and run?</text>
+
+      <path class="ln-loop" d="M330 508 H196 V415 H326" marker-end="url(#arl)"/>
+      <text class="t-lb" x="118" y="462">unresolved</text>
+      <text class="t-lb" x="118" y="476">regenerate (max 1)</text>
+
+      <path class="ln-stop" d="M630 508 H744" marker-end="url(#ars)"/>
+      <text class="t-lbs" x="640" y="500">flow dropped</text>
+
+      <line class="ln" x1="480" y1="544" x2="480" y2="568" marker-end="url(#ar)"/>
+
+      <rect class="bx-det" x="330" y="572" width="300" height="58" rx="3"/>
+      <text class="t" x="480" y="595" text-anchor="middle">6 · EXECUTE</text>
+      <text class="t-sm" x="480" y="612" text-anchor="middle">plain Playwright, no model in the loop</text>
+      <text class="t-sm" x="480" y="625" text-anchor="middle">deterministic · $0</text>
+      <line class="ln" x1="480" y1="630" x2="480" y2="654" marker-end="url(#ar)"/>
+
+      <rect class="bx-dec" x="330" y="658" width="300" height="72" rx="3"/>
+      <text class="t-dec" x="480" y="681" text-anchor="middle">7 · TRIAGE GATE</text>
+      <text class="t-sm" x="480" y="698" text-anchor="middle">broken script, or a genuine application bug?</text>
+      <text class="t-sm" x="480" y="714" text-anchor="middle">only one of those may be repaired</text>
+
+      <path class="ln-stop" d="M630 694 H744" marker-end="url(#ars)"/>
+      <text class="t-lbs" x="640" y="686">real defect</text>
+
+      <line class="ln" x1="480" y1="730" x2="480" y2="754" marker-end="url(#ar)"/>
+      <text class="t-lb" x="490" y="746">script issue</text>
+
+      <rect class="bx-ai" x="330" y="758" width="300" height="58" rx="3"/>
+      <text class="t" x="480" y="781" text-anchor="middle">8 · HEAL</text>
+      <text class="t-sm" x="480" y="798" text-anchor="middle">re-rank a shortlist, gate, record</text>
+      <text class="t-sm" x="480" y="811" text-anchor="middle">locator drift only</text>
+
+      <path class="ln-loop" d="M330 787 H196 V601 H326" marker-end="url(#arl)"/>
+      <text class="t-lb" x="118" y="684">re-run healed</text>
+      <text class="t-lb" x="118" y="698">(max 3 heals)</text>
+
+      <path class="ln-stop" d="M630 787 H744" marker-end="url(#ars)"/>
+      <text class="t-lbs" x="640" y="779">cap or low confidence</text>
+
+      <rect class="bx-stop" x="744" y="300" width="200" height="512" rx="3"/>
+      <text class="t-stop" x="844" y="540" text-anchor="middle">ESCALATE</text>
+      <text class="t-sm" x="844" y="560" text-anchor="middle">stop acting</text>
+      <text class="t-sm" x="844" y="576" text-anchor="middle">record why</text>
+      <text class="t-sm" x="844" y="592" text-anchor="middle">carry into the report</text>
+
+      <line class="ln" x1="480" y1="816" x2="480" y2="890" marker-end="url(#ar)"/>
+      <path class="ln-stop" d="M844 812 V910 H634" marker-end="url(#ars)"/>
+
+      <rect class="bx" x="330" y="894" width="300" height="84" rx="3"/>
+      <text class="t" x="480" y="918" text-anchor="middle">9 · TEST QUALITY REPORT</text>
+      <text class="t-sm" x="480" y="935" text-anchor="middle">scenarios covered · pass/fail · heal actions</text>
+      <text class="t-sm" x="480" y="949" text-anchor="middle">coverage gaps remaining · untested flow risk</text>
+      <text class="t-sm" x="480" y="966" text-anchor="middle">every decision, with its reason</text>
+    </svg>
+    <figcaption><b>Read the colours, not the boxes.</b> Two stages are green — explore and execute — and those run longest and most often, at zero cost. Three are ochre, each capped. The four teal boxes are the only thing a competing tool does not already do: they are the judgement a human currently supplies by hand. Every one has a bounded loop back and an escape hatch, because an autonomous agent that cannot stop is not autonomous, it is unattended.</figcaption>
+  </figure>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 03 · Implementation</p>
+  <h2>A plain state machine, not a framework</h2>
+  <p class="sub">The orchestrator is roughly two hundred lines of explicit Python. No LangChain, no LangGraph, no agent framework. That is a deliberate decision and worth defending.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 300" role="img" aria-label="A state machine with states explore, plan, critique, generate, validate, execute, triage, heal, report, plus terminal states done and escalated, driven by a single loop that appends a decision record at every transition.">
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="currentColor"/></marker></defs>
+
+      <rect class="bx" x="20" y="40" width="200" height="96" rx="3"/>
+      <text class="t" x="120" y="66" text-anchor="middle">OrchestratorState</text>
+      <text class="t-sm" x="120" y="86" text-anchor="middle">stage · url · credentials</text>
+      <text class="t-sm" x="120" y="102" text-anchor="middle">exploration · plan · flows</text>
+      <text class="t-sm" x="120" y="118" text-anchor="middle">replans · heals · cost</text>
+
+      <path class="ln" d="M220 88 H286" marker-end="url(#ar3)"/>
+
+      <rect class="bx-dec" x="290" y="52" width="200" height="72" rx="3"/>
+      <text class="t-dec" x="390" y="78" text-anchor="middle">step(state)</text>
+      <text class="t-sm" x="390" y="97" text-anchor="middle">one pure transition</text>
+      <text class="t-sm" x="390" y="112" text-anchor="middle">returns a Decision</text>
+
+      <path class="ln" d="M490 88 H556" marker-end="url(#ar3)"/>
+
+      <rect class="bx" x="560" y="52" width="200" height="72" rx="3"/>
+      <text class="t" x="660" y="78" text-anchor="middle">Decision</text>
+      <text class="t-sm" x="660" y="97" text-anchor="middle">verdict · reason</text>
+      <text class="t-sm" x="660" y="112" text-anchor="middle">evidence · next stage</text>
+
+      <path class="ln" d="M660 124 V168 H390 V132" marker-end="url(#ar3)"/>
+      <text class="t-lb" x="470" y="163">loop until DONE or ESCALATED</text>
+
+      <rect class="bx-det" x="290" y="196" width="470" height="60" rx="3"/>
+      <text class="t" x="525" y="220" text-anchor="middle">decision ledger</text>
+      <text class="t-sm" x="525" y="238" text-anchor="middle">append-only · every verdict with its reason · becomes the report AND the demo narration</text>
+
+      <path class="ln" d="M660 124 V196" marker-end="url(#ar3)"/>
+      <text class="t-sm" x="20" y="230">The ledger is not logging.</text>
+      <text class="t-sm" x="20" y="246">It is the product's</text>
+      <text class="t-sm" x="20" y="262">explanation of itself.</text>
+    </svg>
+    <figcaption><b>Every transition is a pure function returning a typed <code>Decision</code>.</b> That single choice gives us three things a framework would obscure: the loop is trivially testable without a network, the bounds are enforced in one visible place, and the ledger of decisions <em>is</em> the test quality report — the same records that satisfy requirement M6 also narrate the demo.</figcaption>
+  </figure>
+
+  <h3>Why no framework</h3>
+  <ul>
+    <li><b>It would hide what is being scored.</b> Twenty percent of the grade is how intelligently the orchestrator handles coverage gaps, ambiguity and failure classification. In a framework those become chain internals; here each is a named function whose reasoning is printed.</li>
+    <li><b>The call volume does not justify it.</b> A whole pipeline run is three to eight model calls. Frameworks earn their keep with heavy tool routing, not with a loop and four conditionals.</li>
+    <li><b>Dependency risk, already experienced.</b> Every model identifier from training data returned 404 — the provider's free tier had fully rotated. Plain HTTP with an explicit model fallback chain survived that. A large dependency tree is one more thing to break the night before a deadline.</li>
+    <li><b>Explainability is a deliverable.</b> The submission asks for the ability to explain trade-offs and architecture decisions. "We wrote a state machine and here is every transition" is a better answer than "the framework handled it".</li>
+  </ul>
+  <p><b>The fair counterpoint:</b> LangGraph is genuinely the closest fit, being a state-machine library with checkpointing and tracing. It was considered and rejected because it buys persistence and tracing we can hand-roll in an afternoon, at the cost of the transparency being graded.</p>
+
+<pre><span class="c"># the entire control flow, in essence</span>
+state = OrchestratorState(url=url, credentials=creds, intent=intent, prd=prd)
+<span class="k">while</span> state.stage <span class="k">not in</span> TERMINAL:
+    decision = STEP[state.stage](state)     <span class="c"># pure, typed, testable</span>
+    state.ledger.append(decision)           <span class="c"># the report writes itself</span>
+    state.stage = decision.next_stage
+    <span class="k">if</span> state.over_budget(): state.escalate(<span class="c">"budget exhausted"</span>)
+</pre>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 04 · The decisions</p>
+  <h2>What the orchestrator actually decides</h2>
+  <p class="sub">This is the table to defend in a demo. Each row is a judgement a developer makes by hand today when driving Playwright's agents themselves.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Gate</th><th>Question</th><th>Evidence it uses</th><th>Outcomes</th></tr></thead>
+    <tbody>
+      <tr><td><b>Coverage</b></td><td>Is this plan worth building?</td><td>Exploration digest versus the plan, scoped by input mode: every discovered form and error state (sweep), the stated intent (focused), or the document's requirements (spec-led)</td><td>accept · re-plan with the gaps named · escalate</td></tr>
+      <tr><td><b>Validation</b></td><td>Did the generated flow compile, and does the emitted file run?</td><td>Per-step selector resolution during the dry run, plus an import-and-collect check on the emitted pytest file</td><td>ship flow · regenerate · drop flow and record the risk</td></tr>
+      <tr><td><b>Triage</b></td><td>Broken script, or real bug?</td><td>Failure kind, which tier resolved the step, whether an assertion or a locator failed, page state at failure</td><td>heal · report as defect · flag as flaky</td></tr>
+      <tr><td><b>Heal</b></td><td>Is this repair safe to accept?</td><td>Model confidence, semantic agreement on role and test id, heals already spent</td><td>apply for this run and record · reject · escalate</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="warn"><p><b>The triage gate must never be wrong in one direction.</b> Classifying a genuine application bug as a broken script means the agent repairs the test until it passes and the defect ships. That single failure mode destroys trust in this whole category of tool, so the bias is deliberately asymmetric: a failing assertion is <em>always</em> a candidate defect and is structurally ineligible for repair, even when a model is confident it could fix it. This is enforced in the type system, in the executor's cascade, and in the healer's first gate — three independent places, verified by test.</p></div>
+
+  <h3>Healing during an autonomous run</h3>
+  <p>The pipeline must not stop for a human, but a silent rewrite of a committed test is exactly what the research says destroys trust. The resolution: <b>a heal is applied for the current run so the pipeline completes, recorded in the ledger with its confidence and reasoning, and surfaced in the report</b> — while the committed test file changes only on explicit human approval afterwards. Autonomy during the run, review after it.</p>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 05 · Contracts</p>
+  <h2>Three sub-agents, one meta-agent, and a crawler</h2>
+  <p class="sub">The brief names three sub-agents. The Explorer sits below them as a deterministic tool rather than a fourth agent — it gathers evidence so the agents that cost money have something concrete to reason about.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Component</th><th>In</th><th>Out</th><th>Model calls</th></tr></thead>
+    <tbody>
+      <tr><td><b>Explorer</b><br><span class="num">tool</span></td><td>url, credentials</td><td>Pages, forms, fields, links, controls, plus a compact digest</td><td class="num ok">0</td></tr>
+      <tr><td><b>Planner</b><br><span class="num">sub-agent 1</span></td><td>digest, optional intent, optional PRD</td><td>Named flows with steps and expected outcomes</td><td class="num">1</td></tr>
+      <tr><td><b>Critic</b><br><span class="num">meta-agent</span></td><td>digest + plan + mode</td><td>Gap list, coverage verdict, re-plan instruction</td><td class="num">1 per attempt</td></tr>
+      <tr><td><b>Generator</b><br><span class="num">sub-agent 2</span></td><td>one flow + the live app</td><td>Compiled selectors, assertions, a runnable pytest file</td><td class="num ok">0 when heuristics suffice</td></tr>
+      <tr><td><b>Executor</b><br><span class="num">tool</span></td><td>compiled test</td><td>Per-step result, source tier, timing</td><td class="num ok">0</td></tr>
+      <tr><td><b>Triager</b><br><span class="num">meta-agent</span></td><td>failures + page state</td><td>script issue · real defect · flaky</td><td class="num">0–1 per failure</td></tr>
+      <tr><td><b>Healer</b><br><span class="num">sub-agent 3</span></td><td>target + candidate shortlist</td><td>A proposal with confidence and reasoning</td><td class="num">1 per heal, capped</td></tr>
+      <tr><td><b>Reporter</b><br><span class="num">tool</span></td><td>the decision ledger</td><td>The test quality report</td><td class="num ok">0</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><b>Total for a full pipeline run:</b> roughly <span class="num">3 to 8</span> model calls for an entire suite — one plan, one or two critiques, and a handful of heals. Everything else, including all execution and all re-runs, is free. That is what makes the loop affordable enough to be genuinely autonomous rather than something you supervise because of the bill.</p>
+
+  <h3>What the Generator emits</h3>
+  <p>A runnable pytest file per flow, using Playwright's sync API, with credentials read from the environment rather than baked in. The validation gate then imports and collects the file to prove it is genuinely executable — closing the obvious objection that a JSON definition plus a bespoke runner is not an "executable test file".</p>
+<pre><span class="c"># tests/generated/test_checkout_flow.py  (emitted by the Generator)</span>
+<span class="k">import</span> os
+<span class="k">from</span> playwright.sync_api <span class="k">import</span> Page, expect
+
+<span class="k">def</span> test_checkout_with_one_item(page: Page):
+    page.goto(<span class="c">"https://app.example.com"</span>)
+    page.locator(<span class="c">'[data-test="username"]'</span>).fill(os.environ[<span class="c">"AIVAR_USERNAME"</span>])
+    page.locator(<span class="c">'[data-test="password"]'</span>).fill(os.environ[<span class="c">"AIVAR_PASSWORD"</span>])
+    page.get_by_role(<span class="c">"button"</span>, name=<span class="c">"Login"</span>).click()
+    page.get_by_role(<span class="c">"button"</span>, name=<span class="c">"Add to cart"</span>).first.click()
+    expect(page.locator(<span class="c">'[data-test="cart-badge"]'</span>)).to_have_text(<span class="c">"1"</span>)
+</pre>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 06 · Bounds</p>
+  <h2>The numbers that keep it finite</h2>
+  <p class="sub">Every one is printed in the report. An agent whose limits are invisible is not trustworthy; an agent with no limits is not deployable.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Guardrail</th><th>Default</th><th>What it prevents</th></tr></thead>
+    <tbody>
+      <tr><td><code>max_replans</code></td><td class="num">2</td><td>Re-planning forever chasing perfect coverage</td></tr>
+      <tr><td><code>max_regenerations</code></td><td class="num">1</td><td>Rebuilding a flow the application simply does not support</td></tr>
+      <tr><td><code>max_heals_per_run</code></td><td class="num">3</td><td>A cascade of repairs quietly rewriting a whole suite</td></tr>
+      <tr><td><code>min_heal_confidence</code></td><td class="num">0.5</td><td>Accepting a weak guess as a match</td></tr>
+      <tr><td><code>require_semantic_match</code></td><td class="num">true</td><td>Repairing onto a similar-looking but wrong element</td></tr>
+      <tr><td><code>heal_assertions</code></td><td class="num no">false</td><td>Masking a real defect. Not configurable, by design</td></tr>
+      <tr><td><code>max_explore_pages</code></td><td class="num">8</td><td>An unbounded crawl on a large application</td></tr>
+      <tr><td><code>max_flows</code></td><td class="num">6</td><td>A plan too large to generate inside the demo budget</td></tr>
+      <tr><td><code>max_cost_per_run</code></td><td class="num">$0.50</td><td>Silent budget drift as the suite grows</td></tr>
+      <tr><td><code>max_pipeline_seconds</code></td><td class="num">300</td><td>A run nobody can sit through</td></tr>
+    </tbody>
+  </table></div>
+  <p>Tuned so a default sweep completes in roughly <b>three to five minutes</b> — long enough to be a real suite, short enough to show live.</p>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 07 · Traceability</p>
+  <h2>Every requirement, and where it lives</h2>
+  <p class="sub">Design coverage, stated honestly. "Designed" means this document specifies it; "built" means it exists and is tested.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Req</th><th>Requirement</th><th>Component</th><th>Designed</th><th>Built</th></tr></thead>
+    <tbody>
+      <tr><td class="rid">M1</td><td>URL as sole required input, pipeline begins autonomously</td><td>Orchestrator · Plate 01/02</td><td class="ok">yes</td><td class="no">no</td></tr>
+      <tr><td class="rid">M2</td><td>Planner explores and produces a human-readable plan of meaningful flows</td><td>Explorer + Planner</td><td class="ok">yes</td><td class="part">single-flow only</td></tr>
+      <tr><td class="rid">M3</td><td>Evaluate the plan for coverage gaps before generating</td><td>Critic · coverage gate</td><td class="ok">yes</td><td class="no">no</td></tr>
+      <tr><td class="rid">M4</td><td>Generator produces executable test files with live selector validation</td><td>Generator · validation gate</td><td class="ok">yes</td><td class="part">compiles, emits JSON not pytest</td></tr>
+      <tr><td class="rid">M5</td><td>Run the suite, heal on failure, distinguish broken script from real defect</td><td>Executor · Triager · Healer</td><td class="ok">yes</td><td class="part">healer built, triage partial</td></tr>
+      <tr><td class="rid">M6</td><td>Test quality report: scenarios, outcomes, heal actions, gaps, untested risk</td><td>Reporter · decision ledger</td><td class="ok">yes</td><td class="part">no gaps or risk yet</td></tr>
+      <tr><td class="rid">G1</td><td>Optional PRD informs the Planner's scope</td><td>Mode 3 · Planner input</td><td class="ok">yes</td><td class="no">no</td></tr>
+      <tr><td class="rid">G2</td><td>Natural language intent reflected in the plan</td><td>Mode 2 · Planner input</td><td class="ok">yes</td><td class="part">one intent, one flow</td></tr>
+      <tr><td class="rid">G3</td><td>Parallel execution across flows</td><td>Executor · flow-level workers</td><td class="ok">yes</td><td class="no">no</td></tr>
+      <tr><td class="rid">B1</td><td>PRD-to-plan gap analysis</td><td>Critic in mode 3</td><td class="ok">yes</td><td class="no">no</td></tr>
+      <tr><td class="rid">B2</td><td>Confident defect classification</td><td>Triage gate + FailureKind</td><td class="ok">yes</td><td class="part">four-way kinds enforced</td></tr>
+      <tr><td class="rid">V2</td><td>Explore, write, run, heal</td><td>All four stages</td><td class="ok">yes</td><td class="part">all four exist, unwired</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Deliberately out of scope</h3>
+  <p>Production deployment, CI/CD integration, cross-browser matrix testing, and exhaustive coverage of a production application are all excluded by the brief and are not designed for. Nothing in this architecture spends effort on them. All test behaviour is produced by the pipeline; no hand-written test script is part of the product.</p>
+</section>
+
+<section class="plate">
+  <p class="pnum">Plate 08 · Status</p>
+  <h2>The honest state</h2>
+  <p class="sub">225 tests passing. Explorer, executor and healer verified against a live application.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Stage</th><th>State</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Explore</td><td class="ok">built</td><td>Crawl, login, form and flow detection; verified authenticating against a live site</td></tr>
+      <tr><td>2 · Plan</td><td class="part">partial</td><td>Plans from one snapshot; must consume the digest and emit many flows</td></tr>
+      <tr><td>3 · Coverage gate</td><td class="no">not built</td><td>The must-have. Highest value per hour of anything remaining</td></tr>
+      <tr><td>4 · Generate</td><td class="part">partial</td><td>Dry-run compilation and live selector validation work; emits JSON, not pytest</td></tr>
+      <tr><td>5 · Validation gate</td><td class="part">partial</td><td>Unresolved targets tracked; the decision about them is not made</td></tr>
+      <tr><td>6 · Execute</td><td class="ok">built</td><td>Deterministic, verified at $0.00 against a live site</td></tr>
+      <tr><td>7 · Triage gate</td><td class="part">foundation</td><td>Four-way classification enforced in the type system; ambiguous cases not yet judged</td></tr>
+      <tr><td>8 · Heal</td><td class="ok">built</td><td>Shortlist re-rank, both gates, recording, approval path, verified end to end</td></tr>
+      <tr><td>9 · Report</td><td class="part">partial</td><td>Per-step results, cost and heals render; gaps and untested risk do not</td></tr>
+      <tr><td><b>The orchestrator</b></td><td class="no">not built</td><td>The loop itself. Every stage above still needs a human to invoke it</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note"><p><b>The summary.</b> The pieces are strong and the hard safety properties are structural rather than aspirational. What is missing is the thing the problem statement is named after — the loop that runs them without a person in between. Until that exists, this system is precisely the complaint the briefing opens with.</p></div>
+</section>
+
+</main>
+
+<footer><div class="wrap">Architecture revision 3 · three input modes, state-machine orchestrator, pytest output · supersedes the design-intelligence blueprint</div></footer>
