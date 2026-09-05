@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable
 
@@ -37,6 +37,7 @@ from aivar.executor import run_test
 from aivar.explorer import explore, dismiss_consent, ExplorationReport
 from aivar.llm import LLMConfig, LLMError
 from aivar.models import CompiledTest, RunResult, Severity, StepKind
+from aivar.paths import resolve_out_dir
 from aivar.planner import plan_flows
 from aivar.report import PipelineReport, render_pipeline_text, write_pipeline_report
 from aivar.resolve import best
@@ -943,6 +944,16 @@ def run_pipeline(
 
     if config is None:
         config = OrchestratorConfig()
+
+    # Anchor every output directory to the project root. Without this the files
+    # land relative to wherever the process was launched, so running the CLI and
+    # running the Streamlit app write to different places for the same project.
+    config = replace(
+        config,
+        out_dir=str(resolve_out_dir(config.out_dir)),
+        generated_dir=str(resolve_out_dir(config.generated_dir)),
+        quarantine_dir=str(resolve_out_dir(config.quarantine_dir)),
+    )
 
     if llm_config is None:
         try:
