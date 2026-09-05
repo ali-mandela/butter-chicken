@@ -201,6 +201,7 @@ with tab1:
                     mode="w",
                     suffix=".txt" if prd_file.name.endswith(".txt") else ".md",
                     delete=False,
+                    encoding="utf-8"
                 ) as tmp:
                     tmp.write(prd_file.read().decode("utf-8"))
                     prd_path = tmp.name
