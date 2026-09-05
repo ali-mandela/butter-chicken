@@ -1,0 +1,150 @@
+.config-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 16px;
+}
+
+.config-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(20, 25, 60, 0.08);
+  padding: 40px;
+}
+
+.how-it-works-link {
+  display: block;
+  margin: 18px auto 0;
+  background: none;
+  border: none;
+  color: #3552f0;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.how-it-works-link:hover {
+  text-decoration: underline;
+}
+
+.architecture-card {
+  width: 100%;
+  max-width: 820px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(20, 25, 60, 0.08);
+  padding: 32px;
+}
+
+.architecture-card h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.config-card h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+
+.subtitle {
+  margin: 0 0 28px;
+  color: #6b7086;
+  font-size: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #363a4c;
+}
+
+.field input,
+.field select {
+  font-size: 14px;
+  font-weight: 400;
+  padding: 10px 12px;
+  border: 1px solid #d9dcea;
+  border-radius: 8px;
+  background: #fbfbff;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid #3552f0;
+  outline-offset: 1px;
+}
+
+.field-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.uploaded {
+  color: #12875f;
+  font-weight: 500;
+}
+
+.hint {
+  font-size: 13px;
+  color: #6b7086;
+  font-weight: 400;
+}
+
+.toggle-field {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.toggle.on {
+  background: #16a34a;
+  color: white;
+}
+
+.toggle.off {
+  background: #d9dcea;
+  color: #52566b;
+}
+
+.error {
+  color: #d92d20;
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+
+.start-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #3552f0;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.start-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

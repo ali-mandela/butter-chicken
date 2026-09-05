@@ -1,0 +1,131 @@
+.architecture-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.architecture-subheading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #363a4c;
+}
+
+.architecture-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.architecture-intro {
+  margin: 0;
+  font-size: 13px;
+  color: #52566b;
+  line-height: 1.5;
+}
+
+.architecture-scroll {
+  overflow-x: auto;
+  border-radius: 10px;
+  background: #fbfbff;
+  border: 1px solid #eceef6;
+}
+
+.architecture-svg {
+  min-width: 900px;
+  width: 100%;
+  display: block;
+}
+
+.node-label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.node-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+.edge-label {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.architecture-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.legend-chip {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.parallel-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.parallel-lanes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.parallel-lane {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parallel-lane.wide {
+  max-width: 360px;
+}
+
+.lane-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  width: fit-content;
+}
+
+.lane-badge.running {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.lane-badge.waiting {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.lane-box {
+  border: 1.5px solid #16a34a;
+  background: #f0fdf4;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+}
+
+.lane-box.dependent {
+  border-color: #d97706;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.parallel-arrow-down {
+  text-align: center;
+  font-size: 12px;
+  color: #9297ab;
+  font-weight: 600;
+}
